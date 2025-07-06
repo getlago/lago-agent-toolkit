@@ -22,6 +22,7 @@ A Model Context Protocol server that provides structured access to your Lago ins
 - Rust (latest stable version)
 - Lago instance with API access
 - Mistral AI API key
+- (Optional) LibreChat.ai for web frontend
 
 ### 1. Environment Setup
 
@@ -54,8 +55,26 @@ cargo build --release
 # Start interactive chat
 ./target/release/lago-agent chat
 
+# Start terminal UI with modern interface
+./target/release/lago-agent tui
+
 # Ask a single question
 ./target/release/lago-agent ask "Show me all pending invoices"
+
+# Start API server for LibreChat integration
+./target/release/lago-agent server --port 8080
+```
+
+### 4. LibreChat.ai Integration (Optional)
+
+For a modern web interface, integrate with LibreChat.ai:
+
+```bash
+# Start the API server
+./target/release/lago-agent server --port 8080
+
+# Follow the integration guide
+# See LIBRECHAT_INTEGRATION.md for detailed setup instructions
 ```
 
 ## Example Usage
@@ -82,10 +101,27 @@ Available tools: get_invoice, list_invoices
 Goodbye! 👋
 ```
 
+### Terminal UI Session
+```bash
+$ ./target/release/lago-agent tui
+# Opens a modern terminal interface with:
+# - Real-time streaming responses
+# - Copy-paste functionality (Ctrl+C, Ctrl+V)
+# - Debug panel (press 'd' to toggle)
+# - Modern AI-style theming
+```
+
 ### Single Question Mode
 ```bash
 $ ./target/release/lago-agent ask "How many pending invoices do I have?"
 Based on your Lago instance, you currently have 3 pending invoices...
+```
+
+### LibreChat.ai Web Interface
+```bash
+$ ./target/release/lago-agent server --port 8080
+# Then access via LibreChat at http://localhost:3080
+# Modern web interface with full conversation management
 ```
 
 ## Architecture
@@ -106,6 +142,23 @@ The toolkit follows a modular architecture:
                        │ Lago MCP Server │◄───┤  Lago Instance  │
                        │                 │    │                 │
                        └─────────────────┘    └─────────────────┘
+
+### With LibreChat.ai Web Frontend (Optional)
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│                 │    │                 │    │                 │    │                 │
+│   Web Browser   │◄───┤   LibreChat.ai  │◄───┤  Lago Agent     │◄───┤   Mistral AI    │
+│                 │    │   Frontend      │    │  API Server     │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                        │
+                                │ HTTP/REST              │ MCP Protocol
+                                ▼                        ▼
+                       ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+                       │                 │    │                 │    │                 │
+                       │   MongoDB       │    │ Lago MCP Server │◄───┤  Lago Instance  │
+                       │   Database      │    │                 │    │                 │
+                       └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
 1. **User** interacts with the **Lago Agent** through natural language
@@ -119,9 +172,14 @@ The toolkit follows a modular architecture:
 ### Lago Agent Features
 - 🧠 **Natural Language Processing**: Powered by Mistral AI for intelligent conversations
 - 🔧 **Tool Integration**: Automatically uses MCP tools when needed
-- 💬 **Interactive Chat**: Full conversation support with context awareness
-- ⚡ **Single Questions**: Quick answers to specific queries
+- 💬 **Multiple Interfaces**: Command-line, TUI, and web-based options
+- ⚡ **Real-time Streaming**: Live streaming responses with proper chunk handling
 - 🎯 **Context Awareness**: Maintains conversation history for better responses
+- 📋 **Copy-Paste Support**: Full clipboard integration in TUI mode
+- � **Modern UI**: AI-style theming with role icons and responsive design
+- 🐛 **Debug Panel**: Integrated logging and debugging with real-time display
+- 🌐 **LibreChat Integration**: Modern web frontend with user management
+- 🔄 **Production Ready**: Robust error handling and streaming capabilities
 
 ### Lago MCP Server Features
 - 📊 **Invoice Management**: Comprehensive invoice retrieval and filtering

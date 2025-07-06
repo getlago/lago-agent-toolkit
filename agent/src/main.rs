@@ -6,9 +6,11 @@ mod agent;
 mod mistral;
 mod mcp_client;
 mod ui;
+mod api_server;
 
 use agent::LagoAgent;
 use ui::ChatApp;
+use api_server::start_server;
 
 #[derive(Parser)]
 #[command(name = "lago-agent")]
@@ -36,6 +38,15 @@ enum Commands {
     Ask {
         /// The question to ask
         question: String,
+        /// The MCP server command to run
+        #[arg(short, long, default_value = "../mcp/target/release/lago-mcp-server")]
+        mcp_server: String,
+    },
+    /// Start the API server for LibreChat integration
+    Server {
+        /// Port to run the server on
+        #[arg(short, long, default_value = "8080")]
+        port: u16,
         /// The MCP server command to run
         #[arg(short, long, default_value = "../mcp/target/release/lago-mcp-server")]
         mcp_server: String,
@@ -68,6 +79,9 @@ async fn main() -> Result<()> {
             let mut agent = LagoAgent::new(&mcp_server).await?;
             let response = agent.ask_question(&question).await?;
             println!("{}", response);
+        }
+        Commands::Server { port, mcp_server } => {
+            api_server::start_server(port, mcp_server).await?;
         }
     }
 
