@@ -1,0 +1,49 @@
+name: MCP Rust Tests
+
+on:
+  push:
+    paths:
+      - 'mcp/**'
+      - '.github/workflows/mcp-rust-tests.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "mcp -> target"
+
+      - name: Check formatting
+        run: cargo fmt --check
+        working-directory: ./mcp
+
+      - name: Run clippy
+        run: cargo clippy -- -D warnings
+        working-directory: ./mcp
+
+      - name: Run tests
+        run: cargo test --verbose
+        working-directory: ./mcp
+
+      - name: Run tests with all features
+        run: cargo test --all-features --verbose
+        working-directory: ./mcp
+
+      - name: Check that code compiles in release mode
+        run: cargo check --release
+        working-directory: ./mcp
