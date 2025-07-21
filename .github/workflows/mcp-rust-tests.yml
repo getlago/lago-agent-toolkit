@@ -5,10 +5,6 @@ on:
     paths:
       - 'mcp/**'
       - '.github/workflows/mcp-rust-tests.yml'
-  pull_request:
-    paths:
-      - 'mcp/**'
-      - '.github/workflows/mcp-rust-tests.yml'
 
 env:
   CARGO_TERM_COLOR: always
