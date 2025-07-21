@@ -54,37 +54,14 @@ Replace `your_lago_api_key` with your actual Lago API key. You can find this in 
 Once configured, you can ask Claude natural language questions about your billing data:
 
 - *"Show me all pending invoices from last month"*
-- *"What's the total amount for customer ABC123's invoices?"*
 - *"Find all failed payment invoices"*
-- *"Get invoice details for lago_invoice_xyz"*
+- *"Give me the total amount of overdue invoices for the month of March 2025"*
 
 ## Available Tools
 
 - **`get_invoice`**: Retrieve a specific invoice by Lago ID
 - **`list_invoices`**: Search and filter invoices with advanced criteria
 
-## Development
-
-### Building from Source
-
-```bash
-cd mcp
-cargo build --release
-```
-
-### Running Locally
-
-```bash
-cd mcp
-LAGO_API_KEY=your_key LAGO_API_URL=https://api.getlago.com/api/v1 cargo run
-```
-
-### Docker Build
-
-```bash
-cd mcp
-docker build -t lago-mcp-server .
-```
 
 ## Contributing
 
