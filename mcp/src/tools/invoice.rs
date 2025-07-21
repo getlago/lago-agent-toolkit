@@ -56,7 +56,7 @@ impl InvoiceService {
             issuing_date_from: args.issuing_date_from.clone(), 
             issuing_date_to: args.issuing_date_to.clone(),
             page: args.page,
-            per_page: args.page,
+            per_page: args.per_page,
             ..Default::default()
         };
 
