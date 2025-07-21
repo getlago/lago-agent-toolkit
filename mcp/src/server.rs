@@ -1,11 +1,11 @@
-use std::{sync::Arc, future::Future};
 use anyhow::Result;
 use rmcp::{
     ServerHandler,
-    model::*,
-    tool_handler, tool_router, tool,
     handler::server::{router::tool::ToolRouter, tool::Parameters},
+    model::*,
+    tool, tool_handler, tool_router,
 };
+use std::{future::Future, sync::Arc};
 
 use crate::tools::invoice::InvoiceService;
 
@@ -38,7 +38,9 @@ impl LagoMcpServer {
         self.invoice_service.get_invoice(parameters).await
     }
 
-    #[tool(description = "List invoices from Lago with optional filtering by customer, dates, status and type")]
+    #[tool(
+        description = "List invoices from Lago with optional filtering by customer, dates, status and type"
+    )]
     pub async fn list_invoices(
         &self,
         parameters: Parameters<crate::tools::invoice::ListInvoicesArgs>,

@@ -1,10 +1,5 @@
+use lago_types::models::invoice::{Invoice, InvoicePaymentStatus, InvoiceStatus, InvoiceType};
 use serde::{Deserialize, Serialize};
-use lago_types::models::invoice::{
-    Invoice,
-    InvoiceType,
-    InvoiceStatus,
-    InvoicePaymentStatus,
-};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct InvoiceFilterParams {

@@ -1,21 +1,13 @@
-use std::sync::Arc;
 use anyhow::Result;
-use rmcp::{
-    model::*,
-    handler::server::tool::Parameters,
-};
+use rmcp::{handler::server::tool::Parameters, model::*};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 use lago_client::LagoClient;
 use lago_types::{
-    requests::invoice::{ListInvoicesRequest, GetInvoiceRequest},
     filters::invoice::InvoiceFilters,
-    models::{
-        PaginationParams,
-        InvoiceType,
-        InvoiceStatus,
-        InvoicePaymentStatus,
-    },
+    models::{InvoicePaymentStatus, InvoiceStatus, InvoiceType, PaginationParams},
+    requests::invoice::{GetInvoiceRequest, ListInvoicesRequest},
 };
 
 use crate::types::invoice::{InvoiceFilterParams, InvoiceSummary};
@@ -44,15 +36,17 @@ pub struct InvoiceService {
 
 impl InvoiceService {
     pub fn new() -> Self {
-        let client = Arc::new(LagoClient::from_env().expect("Failed to create Lago client from environment"));
+        let client = Arc::new(
+            LagoClient::from_env().expect("Failed to create Lago client from environment"),
+        );
 
         Self { client }
     }
 
     fn parse_filters(&self, args: &ListInvoicesArgs) -> InvoiceFilterParams {
-        let mut params = InvoiceFilterParams { 
-            customer_external_id: args.customer_external_id.clone(), 
-            issuing_date_from: args.issuing_date_from.clone(), 
+        let mut params = InvoiceFilterParams {
+            customer_external_id: args.customer_external_id.clone(),
+            issuing_date_from: args.issuing_date_from.clone(),
             issuing_date_to: args.issuing_date_to.clone(),
             page: args.page,
             per_page: args.per_page,
@@ -97,7 +91,9 @@ impl InvoiceService {
         let mut filters = InvoiceFilters::new();
 
         if let Some(customer_external_id) = &params.customer_external_id {
-            filters.customer_filter = filters.customer_filter.with_customer_id(customer_external_id.clone());
+            filters.customer_filter = filters
+                .customer_filter
+                .with_customer_id(customer_external_id.clone());
         }
 
         if let Some(from_date) = &params.issuing_date_from {
@@ -145,7 +141,8 @@ impl InvoiceService {
 
         match self.client.list_invoices(Some(request)).await {
             Ok(response) => {
-                let invoice_summaries: Vec<InvoiceSummary> = response.invoices
+                let invoice_summaries: Vec<InvoiceSummary> = response
+                    .invoices
                     .into_iter()
                     .map(InvoiceSummary::from)
                     .collect();
@@ -156,7 +153,8 @@ impl InvoiceService {
                 });
 
                 Ok(CallToolResult::success(vec![Content::text(
-                    serde_json::to_string_pretty(&result).unwrap_or_else(|_| "Failed to serialize result".to_string())
+                    serde_json::to_string_pretty(&result)
+                        .unwrap_or_else(|_| "Failed to serialize result".to_string()),
                 )]))
             }
             Err(e) => {
@@ -181,7 +179,8 @@ impl InvoiceService {
                 });
 
                 Ok(CallToolResult::success(vec![Content::text(
-                    serde_json::to_string_pretty(&result).unwrap_or_else(|_| "Failed to serialize result".to_string())
+                    serde_json::to_string_pretty(&result)
+                        .unwrap_or_else(|_| "Failed to serialize result".to_string()),
                 )]))
             }
             Err(e) => {

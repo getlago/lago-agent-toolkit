@@ -1,13 +1,10 @@
 use anyhow::Result;
-use rmcp::{
-    ServiceExt,
-    transport::stdio,
-};
+use rmcp::{ServiceExt, transport::stdio};
 use tracing_subscriber::EnvFilter;
 
+mod server;
 mod tools;
 mod types;
-mod server;
 
 use server::LagoMcpServer;
 
