@@ -12,7 +12,6 @@ use lago_types::{
     filters::invoice::InvoiceFilters,
     models::{
         PaginationParams,
-        //Invoice,
         InvoiceType,
         InvoiceStatus,
         InvoicePaymentStatus,
