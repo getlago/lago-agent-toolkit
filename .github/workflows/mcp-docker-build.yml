@@ -18,7 +18,7 @@ jobs:
           - version: linux/amd64
             runner: ubuntu-latest
           - version: linux/arm64
-            runner: ubuntu-24.04-arm64
+            runner: linux-arm64
     name: Build ${{ matrix.platform.version }} Image
     runs-on: ${{ matrix.platform.runner }}
     steps:
