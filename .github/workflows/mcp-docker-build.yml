@@ -29,6 +29,9 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            mcp
 
       - name: Docker Meta
         id: meta
@@ -53,7 +56,8 @@ jobs:
         uses: docker/build-push-action@v6
         id: build
         with:
-          context: .
+          context: ./mcp
+          file: ./mcp/Dockerfile
           platforms: ${{ matrix.platform.version }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
@@ -86,7 +90,7 @@ jobs:
       - name: Download Digests
         uses: actions/download-artifact@v4
         with:
-          path: ./_tmp/${{ github.run_id}}/${{ github.run_attempt }}/digests
+          path: ./_tmp/${{ github.run_id }}/${{ github.run_attempt }}/digests
           pattern: digests-*
           merge-multiple: true
 
@@ -108,7 +112,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Create manifest and push
-        working-directory: ./_tmp/${{ github.run_id }}/${{ github.run_attempt}}/digests
+        working-directory: ./_tmp/${{ github.run_id }}/${{ github.run_attempt }}/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
