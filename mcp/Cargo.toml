@@ -16,5 +16,5 @@ async-trait = "0.1"
 schemars = { version = "0.8", features = ["derive"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-lago-client = "0.1.1"
-lago-types = "0.1.1"
+lago-client = "0.1.2"
+lago-types = "0.1.2"
