@@ -1,24 +1,28 @@
 # Lago MCP Server
 
-A Model Context Protocol (MCP) server for interacting with the Lago billing system. This server provides AI assistants with the ability to query and retrieve invoice data from Lago through standardized MCP tools.
+A Model Context Protocol (MCP) server for interacting with the Lago billing system. This server provides AI assistants with the ability to query and manage invoice and customer data from Lago through standardized MCP tools.
 
 :warning: **This project is in active development and may change significantly.**
 
 ## What is MCP?
 
-The Model Context Protocol (MCP) is a standardized way for AI assistants to interact with external systems and data sources. This Lago MCP server acts as a bridge between AI assistants and the Lago billing API, providing structured access to invoice data.
+The Model Context Protocol (MCP) is a standardized way for AI assistants to interact with external systems and data sources. This Lago MCP server acts as a bridge between AI assistants and the Lago billing API, providing structured access to invoice and customer data.
 
 ## Features
 
 - **Invoice Management**: Query and retrieve invoice data from Lago
-- **Filtering Support**: Filter invoices by customer, date ranges, status, and type
+- **Customer Management**: Create, retrieve, and list customers in Lago  
+- **Filtering Support**: Filter invoices and customers by various criteria
 - **Pagination**: Handle large result sets with built-in pagination
 - **Type Safety**: Fully typed requests and responses using Rust
+- **Multi-tenant Support**: Per-request client creation for handling multiple tenants
 - **Environment Configuration**: Easy setup using environment variables
 
 ## Available Tools
 
-### 1. `get_invoice`
+### Invoice Tools
+
+#### 1. `get_invoice`
 Retrieve a specific invoice by its Lago ID.
 
 **Parameters:**
@@ -31,7 +35,7 @@ Retrieve a specific invoice by its Lago ID.
 }
 ```
 
-### 2. `list_invoices`
+#### 2. `list_invoices`
 List invoices with optional filtering and pagination.
 
 **Parameters:**
@@ -55,6 +59,84 @@ List invoices with optional filtering and pagination.
   "payment_status": "pending",
   "page": 1,
   "per_page": 10
+}
+```
+
+### Customer Tools
+
+#### 3. `get_customer`
+Retrieve a specific customer by their external ID.
+
+**Parameters:**
+- `external_customer_id` (string, required): The external ID of the customer to retrieve
+
+**Example:**
+```json
+{
+  "external_customer_id": "customer_123"
+}
+```
+
+#### 4. `list_customers`
+List customers with optional filtering and pagination.
+
+**Parameters:**
+- `external_customer_id` (string, optional): Filter by a specific customer's external ID
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "external_customer_id": "customer_123",
+  "page": 1,
+  "per_page": 10
+}
+```
+
+#### 5. `create_customer`
+Create or update a customer in Lago.
+
+**Parameters:**
+- `external_id` (string, required): Unique external identifier for the customer
+- `name` (string, optional): Customer name
+- `firstname` (string, optional): Customer first name
+- `lastname` (string, optional): Customer last name
+- `email` (string, optional): Customer email address
+- `address_line1` (string, optional): Primary address line
+- `address_line2` (string, optional): Secondary address line
+- `city` (string, optional): City
+- `country` (string, optional): Country
+- `state` (string, optional): State or region
+- `zipcode` (string, optional): ZIP or postal code
+- `phone` (string, optional): Phone number
+- `url` (string, optional): Customer website URL
+- `legal_name` (string, optional): Legal business name
+- `legal_number` (string, optional): Legal business number
+- `logo_url` (string, optional): URL to customer logo
+- `tax_identification_number` (string, optional): Tax ID number
+- `timezone` (string, optional): Customer timezone
+- `currency` (string, optional): Customer default currency (ISO 4217 code)
+- `net_payment_term` (integer, optional): Payment terms in days
+- `customer_type` (string, optional): Type of customer
+  - Possible values: `individual`, `company`
+- `finalize_zero_amount_invoice` (string, optional): Whether to finalize zero amount invoices
+  - Possible values: `inherit`, `finalize`, `skip`
+
+**Example:**
+```json
+{
+  "external_id": "customer_456",
+  "name": "Acme Corporation",
+  "email": "billing@acme.com",
+  "address_line1": "123 Business St",
+  "city": "San Francisco",
+  "country": "US",
+  "state": "CA",
+  "zipcode": "94105",
+  "currency": "USD",
+  "customer_type": "company",
+  "net_payment_term": 30
 }
 ```
 
@@ -147,6 +229,8 @@ Add the following to your Claude Desktop MCP configuration:
 }
 ```
 
+The server provides comprehensive tools for managing both invoices and customers in Lago, with support for filtering, pagination, and full CRUD operations.
+
 ### Other MCP-Compatible Assistants
 
 The server communicates via stdin/stdout using the MCP protocol. Refer to your AI assistant's documentation for specific integration instructions.
@@ -173,6 +257,26 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+### Customer Data
+```json
+{
+  "lago_id": "uuid",
+  "external_id": "customer_123",
+  "name": "Acme Corporation",
+  "email": "billing@acme.com",
+  "created_at": "2024-01-15T10:30:00Z",
+  "country": "US",
+  "currency": "USD",
+  "timezone": "America/New_York",
+  "applicable_timezone": "America/New_York",
+  "billing_configuration": {
+    "invoice_grace_period": 3,
+    "payment_provider": "stripe",
+    "provider_customer_id": "cus_stripe123"
+  }
+}
+```
+
 ### List Response
 ```json
 {
@@ -189,6 +293,22 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+**For customer lists:**
+```json
+{
+  "customers": [
+    // Array of customer objects  
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 3,
+    "total_count": 50,
+    "next_page": 2,
+    "prev_page": null
+  }
+}
+```
+
 ## Development
 
 ### Project Structure
@@ -198,19 +318,27 @@ mcp/
 │   ├── main.rs          # Application entry point
 │   ├── server.rs        # MCP server implementation
 │   ├── tools/           # Tool implementations
-│   │   └── invoice.rs   # Invoice-related tools
-│   └── types/           # Type definitions
-│       └── invoice.rs   # Invoice type definitions
+│   │   ├── invoice.rs   # Invoice-related tools
+│   │   └── customer.rs  # Customer-related tools
+│   └── tools.rs         # Shared utilities and client creation
 ├── Cargo.toml           # Rust dependencies
 └── Dockerfile           # Docker configuration
 ```
 
 ### Adding New Tools
 
-1. Create a new module in `src/tools/`
+1. Create a new module in `src/tools/` or add to existing modules
 2. Implement the tool functions with proper MCP annotations
 3. Add the tool to the `LagoMcpServer` router in `src/server.rs`
-4. Update this README with the new tool documentation
+4. Use the centralized `create_lago_client()` helper from `tools.rs` for client creation
+5. Update this README with the new tool documentation
+
+### Architecture Notes
+
+- **Multi-tenant Support**: Each tool request creates a fresh `LagoClient` instance, allowing the server to handle multiple tenants
+- **Centralized Client Creation**: All tools use the `create_lago_client()` utility function to avoid code duplication
+- **Type Safety**: Direct usage of `lago-types` ensures type safety and consistency with the Lago API
+- **Error Handling**: Standardized error responses using helper functions
 
 ## Error Handling
 
