@@ -4,7 +4,6 @@ use tracing_subscriber::EnvFilter;
 
 mod server;
 mod tools;
-mod types;
 
 use server::LagoMcpServer;
 

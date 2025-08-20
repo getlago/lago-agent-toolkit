@@ -5,24 +5,28 @@ use rmcp::{
     model::*,
     tool, tool_handler, tool_router,
 };
-use std::{future::Future, sync::Arc};
+use std::future::Future;
 
+use crate::tools::customer::CustomerService;
 use crate::tools::invoice::InvoiceService;
 
 #[derive(Clone)]
 #[allow(dead_code)]
 pub struct LagoMcpServer {
-    invoice_service: Arc<InvoiceService>,
+    invoice_service: InvoiceService,
+    customer_service: CustomerService,
     tool_router: ToolRouter<Self>,
 }
 
 #[allow(dead_code)]
 impl LagoMcpServer {
     pub fn new() -> Self {
-        let invoice_service = Arc::new(InvoiceService::new());
+        let invoice_service = InvoiceService::new();
+        let customer_service = CustomerService::new();
 
         Self {
             invoice_service,
+            customer_service,
             tool_router: Self::tool_router(),
         }
     }
@@ -34,7 +38,7 @@ impl LagoMcpServer {
     pub async fn get_invoice(
         &self,
         parameters: Parameters<crate::tools::invoice::GetInvoiceArgs>,
-    ) -> Result<CallToolResult, rmcp::Error> {
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.invoice_service.get_invoice(parameters).await
     }
 
@@ -44,8 +48,34 @@ impl LagoMcpServer {
     pub async fn list_invoices(
         &self,
         parameters: Parameters<crate::tools::invoice::ListInvoicesArgs>,
-    ) -> Result<CallToolResult, rmcp::Error> {
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.invoice_service.list_invoices(parameters).await
+    }
+
+    #[tool(description = "Get a specific customer by their external ID")]
+    pub async fn get_customer(
+        &self,
+        parameters: Parameters<crate::tools::customer::GetCustomerArgs>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.customer_service.get_customer(parameters).await
+    }
+
+    #[tool(
+        description = "List customers from Lago with optional filtering by external customer ID"
+    )]
+    pub async fn list_customers(
+        &self,
+        parameters: Parameters<crate::tools::customer::ListCustomersArgs>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.customer_service.list_customers(parameters).await
+    }
+
+    #[tool(description = "Create or update a customer in Lago")]
+    pub async fn create_customer(
+        &self,
+        parameters: Parameters<crate::tools::customer::CreateCustomerArgs>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.customer_service.create_customer(parameters).await
     }
 }
 
@@ -54,7 +84,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices and other lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers and other lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
