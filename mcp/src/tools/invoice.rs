@@ -35,6 +35,7 @@ impl InvoiceService {
         Self
     }
 
+    #[allow(clippy::collapsible_if)]
     fn build_request(&self, args: &ListInvoicesArgs) -> ListInvoicesRequest {
         let mut filters = InvoiceFilters::new();
 

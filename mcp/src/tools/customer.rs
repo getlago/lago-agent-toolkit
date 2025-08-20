@@ -130,6 +130,7 @@ impl CustomerService {
         }
     }
 
+    #[allow(clippy::collapsible_if)]
     pub async fn create_customer(
         &self,
         Parameters(args): Parameters<CreateCustomerArgs>,
