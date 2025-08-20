@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use lago_types::{
     filters::customer::CustomerFilter,
-    models::{CustomerType, CustomerFinalizeZeroAmountInvoice, PaginationParams},
+    models::{CustomerFinalizeZeroAmountInvoice, CustomerType, PaginationParams},
     requests::customer::{
-        CreateCustomerRequest, CreateCustomerInput, GetCustomerRequest, ListCustomersRequest,
+        CreateCustomerInput, CreateCustomerRequest, GetCustomerRequest, ListCustomersRequest,
     },
 };
 
@@ -152,8 +152,13 @@ impl CustomerService {
             customer_input = customer_input.with_email(email);
         }
 
-        if args.address_line1.is_some() || args.address_line2.is_some() || args.city.is_some() 
-            || args.country.is_some() || args.state.is_some() || args.zipcode.is_some() {
+        if args.address_line1.is_some()
+            || args.address_line2.is_some()
+            || args.city.is_some()
+            || args.country.is_some()
+            || args.state.is_some()
+            || args.zipcode.is_some()
+        {
             customer_input = customer_input.with_address(
                 args.address_line1.unwrap_or_default(),
                 args.address_line2,
@@ -173,10 +178,8 @@ impl CustomerService {
         }
 
         if args.legal_name.is_some() || args.legal_number.is_some() {
-            customer_input = customer_input.with_legal_info(
-                args.legal_name.unwrap_or_default(),
-                args.legal_number,
-            );
+            customer_input = customer_input
+                .with_legal_info(args.legal_name.unwrap_or_default(), args.legal_number);
         }
 
         if let Some(logo_url) = args.logo_url {
@@ -184,7 +187,8 @@ impl CustomerService {
         }
 
         if let Some(tax_identification_number) = args.tax_identification_number {
-            customer_input = customer_input.with_tax_identification_number(tax_identification_number);
+            customer_input =
+                customer_input.with_tax_identification_number(tax_identification_number);
         }
 
         if let Some(timezone) = args.timezone {
