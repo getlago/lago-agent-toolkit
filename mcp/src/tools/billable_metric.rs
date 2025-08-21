@@ -135,6 +135,7 @@ impl BillableMetricService {
         }
     }
 
+    #[allow(clippy::collapsible_if)]
     pub async fn create_billable_metric(
         &self,
         Parameters(args): Parameters<CreateBillableMetricArgs>,
