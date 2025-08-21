@@ -58,6 +58,7 @@ impl BillableMetricService {
         Self
     }
 
+    #[allow(clippy::collapsible_if)]
     fn build_list_request(&self, params: &ListBillableMetricsArgs) -> ListBillableMetricsRequest {
         let mut filters = BillableMetricFilter::default();
 
