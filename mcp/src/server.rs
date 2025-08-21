@@ -7,6 +7,7 @@ use rmcp::{
 };
 use std::future::Future;
 
+use crate::tools::billable_metric::BillableMetricService;
 use crate::tools::customer::CustomerService;
 use crate::tools::invoice::InvoiceService;
 
@@ -15,6 +16,7 @@ use crate::tools::invoice::InvoiceService;
 pub struct LagoMcpServer {
     invoice_service: InvoiceService,
     customer_service: CustomerService,
+    billable_metric_service: BillableMetricService,
     tool_router: ToolRouter<Self>,
 }
 
@@ -23,10 +25,12 @@ impl LagoMcpServer {
     pub fn new() -> Self {
         let invoice_service = InvoiceService::new();
         let customer_service = CustomerService::new();
+        let billable_metric_service = BillableMetricService::new();
 
         Self {
             invoice_service,
             customer_service,
+            billable_metric_service,
             tool_router: Self::tool_router(),
         }
     }
@@ -77,6 +81,38 @@ impl LagoMcpServer {
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.customer_service.create_customer(parameters).await
     }
+
+    #[tool(description = "Get a specific billable metric by its code")]
+    pub async fn get_billable_metric(
+        &self,
+        parameters: Parameters<crate::tools::billable_metric::GetBillableMetricArgs>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.billable_metric_service
+            .get_billable_metric(parameters)
+            .await
+    }
+
+    #[tool(
+        description = "List billable metrics from Lago with optional filtering by aggregation type and recurring status"
+    )]
+    pub async fn list_billable_metrics(
+        &self,
+        parameters: Parameters<crate::tools::billable_metric::ListBillableMetricsArgs>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.billable_metric_service
+            .list_billable_metrics(parameters)
+            .await
+    }
+
+    #[tool(description = "Create a new billable metric in Lago")]
+    pub async fn create_billable_metric(
+        &self,
+        parameters: Parameters<crate::tools::billable_metric::CreateBillableMetricArgs>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.billable_metric_service
+            .create_billable_metric(parameters)
+            .await
+    }
 }
 
 #[tool_handler]
@@ -84,7 +120,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers and other lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, billable metrics and other lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
