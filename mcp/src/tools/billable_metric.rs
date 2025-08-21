@@ -139,7 +139,10 @@ impl BillableMetricService {
         Parameters(args): Parameters<CreateBillableMetricArgs>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         // Parse aggregation type
-        let aggregation_type = match args.aggregation_type.parse::<BillableMetricAggregationType>() {
+        let aggregation_type = match args
+            .aggregation_type
+            .parse::<BillableMetricAggregationType>()
+        {
             Ok(agg_type) => agg_type,
             Err(_) => {
                 return Ok(error_result(format!(
