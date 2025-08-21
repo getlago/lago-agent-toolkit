@@ -11,8 +11,9 @@ The Model Context Protocol (MCP) is a standardized way for AI assistants to inte
 ## Features
 
 - **Invoice Management**: Query and retrieve invoice data from Lago
-- **Customer Management**: Create, retrieve, and list customers in Lago  
-- **Filtering Support**: Filter invoices and customers by various criteria
+- **Customer Management**: Create, retrieve, and list customers in Lago
+- **Billable Metric Management**: Create, retrieve, and list billable metrics in Lago
+- **Filtering Support**: Filter invoices, customers, and billable metrics by various criteria
 - **Pagination**: Handle large result sets with built-in pagination
 - **Type Safety**: Fully typed requests and responses using Rust
 - **Multi-tenant Support**: Per-request client creation for handling multiple tenants
@@ -140,6 +141,83 @@ Create or update a customer in Lago.
 }
 ```
 
+### Billable Metric Tools
+
+#### 6. `get_billable_metric`
+Retrieve a specific billable metric by its code.
+
+**Parameters:**
+- `code` (string, required): The unique code of the billable metric to retrieve
+
+**Example:**
+```json
+{
+  "code": "storage_gb"
+}
+```
+
+#### 7. `list_billable_metrics`
+List billable metrics with optional filtering and pagination.
+
+**Parameters:**
+- `aggregation_type` (string, optional): Filter by aggregation type
+  - Possible values: `count_agg`, `sum_agg`, `max_agg`, `unique_count_agg`, `weighted_sum_agg`, `latest_agg`
+- `recurring` (boolean, optional): Filter by recurring status
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "aggregation_type": "sum_agg",
+  "recurring": false,
+  "page": 1,
+  "per_page": 10
+}
+```
+
+#### 8. `create_billable_metric`
+Create a new billable metric in Lago.
+
+**Parameters:**
+- `name` (string, required): Name of the billable metric
+- `code` (string, required): Unique code for the billable metric
+- `aggregation_type` (string, required): Aggregation method to use
+  - Possible values: `count_agg`, `sum_agg`, `max_agg`, `unique_count_agg`, `weighted_sum_agg`, `latest_agg`
+- `description` (string, optional): Description of the billable metric
+- `recurring` (boolean, optional): Whether the metric is recurring
+- `rounding_function` (string, optional): Rounding function to apply
+  - Possible values: `ceil`, `floor`, `round`
+- `rounding_precision` (integer, optional): Number of decimal places for rounding
+- `expression` (string, optional): Custom expression for calculation
+- `field_name` (string, optional): Field name to aggregate on from usage events
+- `weighted_interval` (string, optional): Interval for weighted sum aggregation
+  - Possible values: `seconds`
+- `filters` (array, optional): Array of filter objects for differentiated pricing
+  - Each filter object has:
+    - `key` (string): Filter key to match in event properties
+    - `values` (array): Array of possible filter values
+
+**Example:**
+```json
+{
+  "name": "Storage Usage",
+  "code": "storage_gb",
+  "aggregation_type": "sum_agg",
+  "description": "Tracks storage usage in gigabytes",
+  "field_name": "gb_used",
+  "recurring": false,
+  "rounding_function": "round",
+  "rounding_precision": 2,
+  "filters": [
+    {
+      "key": "region",
+      "values": ["us-east-1", "eu-west-1"]
+    }
+  ]
+}
+```
+
 ## Setup and Configuration
 
 ### Environment Variables
@@ -229,7 +307,7 @@ Add the following to your Claude Desktop MCP configuration:
 }
 ```
 
-The server provides comprehensive tools for managing both invoices and customers in Lago, with support for filtering, pagination, and full CRUD operations.
+The server provides comprehensive tools for managing invoices, customers, and billable metrics in Lago, with support for filtering, pagination, and full CRUD operations.
 
 ### Other MCP-Compatible Assistants
 
@@ -277,6 +355,30 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+### Billable Metric Data
+```json
+{
+  "lago_id": "uuid",
+  "name": "Storage Usage",
+  "code": "storage_gb", 
+  "description": "Tracks storage usage in gigabytes",
+  "aggregation_type": "sum_agg",
+  "recurring": false,
+  "rounding_function": "round",
+  "rounding_precision": 2,
+  "created_at": "2024-01-15T10:30:00Z",
+  "expression": null,
+  "field_name": "gb_used",
+  "weighted_interval": null,
+  "filters": [
+    {
+      "key": "region",
+      "values": ["us-east-1", "eu-west-1"]
+    }
+  ]
+}
+```
+
 ### List Response
 ```json
 {
@@ -309,6 +411,22 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+**For billable metric lists:**
+```json
+{
+  "billable_metrics": [
+    // Array of billable metric objects
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 2,
+    "total_count": 25,
+    "next_page": 2,
+    "prev_page": null
+  }
+}
+```
+
 ## Development
 
 ### Project Structure
@@ -319,7 +437,8 @@ mcp/
 │   ├── server.rs        # MCP server implementation
 │   ├── tools/           # Tool implementations
 │   │   ├── invoice.rs   # Invoice-related tools
-│   │   └── customer.rs  # Customer-related tools
+│   │   ├── customer.rs  # Customer-related tools
+│   │   └── billable_metric.rs # Billable metric-related tools
 │   └── tools.rs         # Shared utilities and client creation
 ├── Cargo.toml           # Rust dependencies
 └── Dockerfile           # Docker configuration
