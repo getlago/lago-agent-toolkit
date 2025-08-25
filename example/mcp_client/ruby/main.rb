@@ -26,9 +26,37 @@ def create_welcome_box
   puts pastel.cyan(box)
 end
 
+def check_mistral_api_key
+  pastel = Pastel.new
+
+  if ENV["MISTRAL_API_KEY"].nil? || ENV["MISTRAL_API_KEY"].strip.empty?
+    error_box = TTY::Box.frame(
+      width: 70,
+      height: 8,
+      align: :left,
+      title: { top_left: " ❌ Missing Configuration " },
+      style: {
+        fg: :red,
+        border: { fg: :red }
+      }
+    ) do
+      "MISTRAL_API_KEY environment variable is required!\n\n" +
+      "Please set it before running the application:\n\n" +
+      "export MISTRAL_API_KEY=your_api_key_here\n" +
+      "ruby main.rb"
+    end
+
+    puts pastel.red(error_box)
+    puts pastel.red("\n💡 You can get your API key from: https://console.mistral.ai/")
+    exit(1)
+  end
+end
+
 def main
+  check_mistral_api_key
+
   logger = Logger.new($stdout)
-  logger.level = Logger::INFO
+  logger.level = Logger::WARN
   logger.formatter = proc do |severity, datetime, _progname, msg|
     "[CLIENT] #{severity} #{datetime.strftime("%H:%M:%S.%L")} - #{msg}\n"
   end
