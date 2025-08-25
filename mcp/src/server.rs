@@ -1,8 +1,9 @@
 use anyhow::Result;
 use rmcp::{
-    ServerHandler,
+    ErrorData as McpError, RoleServer, ServerHandler,
     handler::server::{router::tool::ToolRouter, tool::Parameters},
     model::*,
+    service::RequestContext,
     tool, tool_handler, tool_router,
 };
 use std::future::Future;
@@ -127,5 +128,18 @@ impl ServerHandler for LagoMcpServer {
                 .build(),
             ..Default::default()
         }
+    }
+
+    async fn initialize(
+        &self,
+        _request: InitializeRequestParam,
+        context: RequestContext<RoleServer>,
+    ) -> Result<InitializeResult, McpError> {
+        if let Some(http_request_part) = context.extensions.get::<axum::http::request::Parts>() {
+            let initialize_headers = &http_request_part.headers;
+            let initialize_uri = &http_request_part.uri;
+            tracing::info!(?initialize_headers, %initialize_uri, "initialize from http server");
+        }
+        Ok(self.get_info())
     }
 }

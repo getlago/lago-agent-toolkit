@@ -1,0 +1,9 @@
+source "https://rubygems.org"
+
+ruby "3.4.5"
+
+gem "json"
+gem "net-http"
+gem "tty-prompt"
+gem "tty-box"
+gem "pastel"

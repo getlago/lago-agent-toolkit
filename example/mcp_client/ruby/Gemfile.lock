@@ -1,0 +1,48 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    json (2.13.2)
+    net-http (0.6.0)
+      uri
+    pastel (0.8.0)
+      tty-color (~> 0.5)
+    strings (0.2.1)
+      strings-ansi (~> 0.2)
+      unicode-display_width (>= 1.5, < 3.0)
+      unicode_utils (~> 1.4)
+    strings-ansi (0.2.0)
+    tty-box (0.7.0)
+      pastel (~> 0.8)
+      strings (~> 0.2.0)
+      tty-cursor (~> 0.7)
+    tty-color (0.6.0)
+    tty-cursor (0.7.1)
+    tty-prompt (0.23.1)
+      pastel (~> 0.8)
+      tty-reader (~> 0.8)
+    tty-reader (0.9.0)
+      tty-cursor (~> 0.7)
+      tty-screen (~> 0.8)
+      wisper (~> 2.0)
+    tty-screen (0.8.2)
+    unicode-display_width (2.6.0)
+    unicode_utils (1.4.0)
+    uri (1.0.3)
+    wisper (2.0.1)
+
+PLATFORMS
+  ruby
+  x86_64-linux
+
+DEPENDENCIES
+  json
+  net-http
+  pastel
+  tty-box
+  tty-prompt
+
+RUBY VERSION
+   ruby 3.4.5p51
+
+BUNDLED WITH
+   2.7.1
