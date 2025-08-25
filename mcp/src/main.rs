@@ -67,45 +67,6 @@ async fn main() -> Result<()> {
             let _ = axum::serve(tcp_listener, router)
                 .with_graceful_shutdown(async { tokio::signal::ctrl_c().await.unwrap() })
                 .await;
-            // let config = SseServerConfig {
-            //     bind: format!("{}:{}", host, port).parse()?,
-            //     sse_path: "/sse".to_string(),
-            //     post_path: "/message".to_string(),
-            //     ct: tokio_util::sync::CancellationToken::new(),
-            //     sse_keep_alive: None,
-            // };
-
-            // let (sse_server, sse_router) = SseServer::new(config);
-            // let listener = tokio::net::TcpListener::bind(sse_server.config.bind).await?;
-            // let ct = sse_server.config.ct.child_token();
-
-            // tracing::info!(
-            //     bind_address = %sse_server.config.bind,
-            //     sse_endpoint = format!("http://{}:{}/sse", host, port),
-            //     message_endpoint = format!("http://{}:{}/message", host, port),
-            //     "SSE server starting"
-            // );
-
-            // let server = axum::serve(listener, sse_router).with_graceful_shutdown(async move {
-            //     ct.cancelled().await;
-            //     tracing::info!("SSE server graceful shutdown initiated");
-            // });
-
-            // tokio::spawn(async move {
-            //     if let Err(e) = server.await {
-            //         tracing::error!(error = %e, "SSE server shutdown with error")
-            //     } else {
-            //         tracing::info!("SSE server shutdown successfully");
-            //     }
-            // });
-
-            // let ct = sse_server.with_service(LagoMcpServer::new);
-
-            // tracing::info!("SSE server is now ready to accept connections");
-
-            // tokio::signal::ctrl_c().await?;
-            // tracing::info!("Shutdown signal received, stopping server...");
-            // ct.cancel();
         }
     }
 
