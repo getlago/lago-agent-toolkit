@@ -3,8 +3,8 @@ use rmcp::{
     ErrorData as McpError, RoleServer, ServerHandler,
     handler::server::{router::tool::ToolRouter, tool::Parameters},
     model::*,
-    tool, tool_handler, tool_router,
     service::RequestContext,
+    tool, tool_handler, tool_router,
 };
 use std::future::Future;
 

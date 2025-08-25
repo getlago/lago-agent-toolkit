@@ -3,10 +3,8 @@ use clap::{Parser, Subcommand};
 use rmcp::{
     ServiceExt,
     transport::{
-        streamable_http_server::{
-            StreamableHttpService, session::local::LocalSessionManager
-        },
         stdio,
+        streamable_http_server::{StreamableHttpService, session::local::LocalSessionManager},
     },
 };
 use tracing_subscriber::EnvFilter;
