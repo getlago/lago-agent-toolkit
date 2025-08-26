@@ -1,4 +1,4 @@
-FROM rust:1.88-slim-bookworm AS builder
+FROM rust:1.88-slim-trixie AS builder
 
 RUN apt-get update && apt-get install -y \
     pkg-config \
@@ -9,12 +9,11 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
-
 COPY src ./src
 
 RUN cargo build --release
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
@@ -33,4 +32,4 @@ USER appuser
 
 ENV RUST_LOG=info
 
-CMD ["./lago-mcp-server"]
+CMD ["./lago-mcp-server","stdio"]
