@@ -52,8 +52,35 @@ def check_mistral_api_key
   end
 end
 
+def check_mistral_agent_id
+  pastel = Pastel.new
+
+  if ENV["MISTRAL_AGENT_ID"].nil? || ENV["MISTRAL_AGENT_ID"].strip.empty?
+    error_box = TTY::Box.frame(
+      width: 70,
+      height: 8,
+      align: :left,
+      title: { top_left: " ❌ Missing Configuration " },
+      style: {
+        fg: :red,
+        border: { fg: :red }
+      }
+    ) do
+      "MISTRAL_AGENT_ID environment variable is required!\n\n" +
+      "Please set it before running the application:\n\n" +
+      "export MISTRAL_AGENT_ID=your_agent_id_here\n" +
+      "ruby main.rb"
+    end
+
+    puts pastel.red(error_box)
+    puts pastel.red("\n💡 You can get your Agent ID from: https://console.mistral.ai/")
+    exit(1)
+  end
+end
+
 def main
   check_mistral_api_key
+  check_mistral_agent_id
 
   logger = Logger.new($stdout)
   logger.level = Logger::WARN
