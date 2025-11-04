@@ -239,12 +239,12 @@ RUST_LOG=info
 
 1. Build the Docker image:
 ```bash
-docker build -t lago-mcp-server .
+docker build -t mcp-server_dev .
 ```
 
 2. Run the container:
 ```bash
-docker run -e LAGO_API_KEY=your_api_key -e LAGO_API_URL=your_api_url lago-mcp-server
+docker run -e LAGO_API_KEY=your_api_key -e LAGO_API_URL=your_api_url mcp-server_dev
 ```
 
 #### Option 2: Building from Source

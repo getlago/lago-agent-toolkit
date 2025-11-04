@@ -32,4 +32,4 @@ USER appuser
 
 ENV RUST_LOG=info
 
-CMD ["./lago-mcp-server","stdio"]
+CMD ["./lago-mcp-server","sse"]
