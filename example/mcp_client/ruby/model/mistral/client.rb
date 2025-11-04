@@ -7,16 +7,16 @@ module Model
     class Client
       MISTRAL_API_URL = "https://api.mistral.ai/v1/agents/completions"
 
-      def initialize(logger: nil, model: "mistral-large-latest")
+      def initialize(logger: nil)
         @logger = logger
-        @model = model
+        @agent_id = ENV["MISTRAL_AGENT_ID"]
         @api_key = ENV["MISTRAL_API_KEY"]
       end
 
       def chat_completion(messages:, tools: nil, **options)
         payload = {
-          model:,
           messages:,
+          agent_id:,
           **options
         }
 
@@ -56,7 +56,7 @@ module Model
 
       private
 
-      attr_accessor :logger, :model, :api_key
+      attr_accessor :logger, :api_key, :agent_id
     end
   end
 end
