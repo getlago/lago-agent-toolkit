@@ -1,10 +1,5 @@
 use anyhow::Result;
-use rmcp::{
-    RoleServer,
-    handler::server::tool::Parameters,
-    service::RequestContext,
-    model::*
-};
+use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
 
 use lago_types::{
@@ -12,7 +7,6 @@ use lago_types::{
     models::{InvoicePaymentStatus, InvoiceStatus, InvoiceType, PaginationParams},
     requests::invoice::{GetInvoiceRequest, ListInvoicesRequest},
 };
-
 
 use crate::tools::{create_lago_client, error_result, success_result};
 

@@ -1,10 +1,5 @@
 use anyhow::Result;
-use rmcp::{
-    handler::server::tool::Parameters,
-    service::RequestContext,
-    RoleServer,
-    model::*
-};
+use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
 
 use lago_types::{

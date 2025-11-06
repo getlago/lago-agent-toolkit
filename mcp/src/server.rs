@@ -56,7 +56,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::ListInvoicesArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.invoice_service.list_invoices(parameters, context).await
+        self.invoice_service
+            .list_invoices(parameters, context)
+            .await
     }
 
     #[tool(description = "Get a specific customer by their external ID")]
@@ -65,7 +67,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::customer::GetCustomerArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.customer_service.get_customer(parameters, context).await
+        self.customer_service
+            .get_customer(parameters, context)
+            .await
     }
 
     #[tool(
@@ -76,7 +80,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::customer::ListCustomersArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.customer_service.list_customers(parameters, context).await
+        self.customer_service
+            .list_customers(parameters, context)
+            .await
     }
 
     #[tool(description = "Create or update a customer in Lago")]

@@ -3,15 +3,16 @@ pub mod customer;
 pub mod invoice;
 
 use lago_client::{Config, Credentials, LagoClient, Region};
-use serde::Serialize;
 use rmcp::{
-    service::RequestContext,
     RoleServer,
-    model::{CallToolResult, Content}
+    model::{CallToolResult, Content},
+    service::RequestContext,
 };
+use serde::Serialize;
 
-
-pub async fn create_lago_client(context: &RequestContext<RoleServer>,) -> Result<LagoClient, CallToolResult> {
+pub async fn create_lago_client(
+    context: &RequestContext<RoleServer>,
+) -> Result<LagoClient, CallToolResult> {
     let (header_key, header_url) = context
         .extensions
         .get::<axum::http::request::Parts>()
@@ -33,7 +34,10 @@ pub async fn create_lago_client(context: &RequestContext<RoleServer>,) -> Result
     if let (Some(key), Some(url)) = (header_key, header_url) {
         let credentials = Credentials::new(key);
         let region = Region::Custom(url);
-        let config = Config::builder().credentials(credentials).region(region).build();
+        let config = Config::builder()
+            .credentials(credentials)
+            .region(region)
+            .build();
         return Ok(LagoClient::new(config));
     }
 
