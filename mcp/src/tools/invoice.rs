@@ -8,6 +8,7 @@ use lago_types::{
     requests::invoice::{GetInvoiceRequest, ListInvoicesRequest},
 };
 
+use crate::server::LagoMcpServer;
 use crate::tools::{create_lago_client, error_result, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -90,8 +91,9 @@ impl InvoiceService {
     pub async fn list_invoices(
         &self,
         Parameters(args): Parameters<ListInvoicesArgs>,
+        server: &LagoMcpServer,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client() {
+        let client = match create_lago_client(server).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
@@ -116,8 +118,9 @@ impl InvoiceService {
     pub async fn get_invoice(
         &self,
         Parameters(args): Parameters<GetInvoiceArgs>,
+        server: &LagoMcpServer,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client() {
+        let client = match create_lago_client(server).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
