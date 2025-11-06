@@ -3,31 +3,44 @@ pub mod customer;
 pub mod invoice;
 
 use lago_client::{Config, Credentials, LagoClient, Region};
-use rmcp::model::{CallToolResult, Content};
 use serde::Serialize;
+use rmcp::{
+    service::RequestContext,
+    RoleServer,
+    model::{CallToolResult, Content}
+};
 
-use crate::server::LagoMcpServer;
 
-pub async fn create_lago_client(server: &LagoMcpServer) -> Result<LagoClient, CallToolResult> {
-    let creds = server.get_credentials().await;
+pub async fn create_lago_client(context: &RequestContext<RoleServer>,) -> Result<LagoClient, CallToolResult> {
+    let (header_key, header_url) = context
+        .extensions
+        .get::<axum::http::request::Parts>()
+        .map(|parts| {
+            let key = parts
+                .headers
+                .get("X-LAGO-API-KEY")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string());
+            let url = parts
+                .headers
+                .get("X-LAGO-API-URL")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string());
+            (key, url)
+        })
+        .unwrap_or((None, None));
 
-    match (creds.api_key, creds.api_url) {
-        (Some(key), Some(url)) => {
-            let credentials = Credentials::new(key);
-            let region = Region::Custom(url);
-
-            let config = Config::builder()
-                .credentials(credentials)
-                .region(region)
-                .build();
-
-            Ok(LagoClient::new(config))
-        }
-        _ => LagoClient::from_env().map_err(|e| {
-            let error_message = format!("Failed to create Lago client: {e}");
-            error_result(error_message)
-        }),
+    if let (Some(key), Some(url)) = (header_key, header_url) {
+        let credentials = Credentials::new(key);
+        let region = Region::Custom(url);
+        let config = Config::builder().credentials(credentials).region(region).build();
+        return Ok(LagoClient::new(config));
     }
+
+    LagoClient::from_env().map_err(|e| {
+        let error_message = format!("Failed to create lago client: {e}");
+        error_result(error_message)
+    })
 }
 
 pub fn success_result<T: Serialize>(data: &T) -> CallToolResult {

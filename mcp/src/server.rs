@@ -7,18 +7,10 @@ use rmcp::{
     tool, tool_handler, tool_router,
 };
 use std::future::Future;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 use crate::tools::billable_metric::BillableMetricService;
 use crate::tools::customer::CustomerService;
 use crate::tools::invoice::InvoiceService;
-
-#[derive(Clone)]
-pub struct ApiCredentials {
-    pub api_key: Option<String>,
-    pub api_url: Option<String>,
-}
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -27,7 +19,6 @@ pub struct LagoMcpServer {
     customer_service: CustomerService,
     billable_metric_service: BillableMetricService,
     tool_router: ToolRouter<Self>,
-    credentials: Arc<RwLock<ApiCredentials>>,
 }
 
 #[allow(dead_code)]
@@ -42,21 +33,7 @@ impl LagoMcpServer {
             customer_service,
             billable_metric_service,
             tool_router: Self::tool_router(),
-            credentials: Arc::new(RwLock::new(ApiCredentials {
-                api_key: None,
-                api_url: None,
-            })),
         }
-    }
-
-    pub async fn set_credentials(&self, api_key: Option<String>, api_url: Option<String>) {
-        let mut creds = self.credentials.write().await;
-        creds.api_key = api_key;
-        creds.api_url = api_url;
-    }
-
-    pub async fn get_credentials(&self) -> ApiCredentials {
-        self.credentials.read().await.clone()
     }
 }
 
@@ -66,8 +43,9 @@ impl LagoMcpServer {
     pub async fn get_invoice(
         &self,
         parameters: Parameters<crate::tools::invoice::GetInvoiceArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.invoice_service.get_invoice(parameters, self).await
+        self.invoice_service.get_invoice(parameters, context).await
     }
 
     #[tool(
@@ -76,16 +54,18 @@ impl LagoMcpServer {
     pub async fn list_invoices(
         &self,
         parameters: Parameters<crate::tools::invoice::ListInvoicesArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.invoice_service.list_invoices(parameters, self).await
+        self.invoice_service.list_invoices(parameters, context).await
     }
 
     #[tool(description = "Get a specific customer by their external ID")]
     pub async fn get_customer(
         &self,
         parameters: Parameters<crate::tools::customer::GetCustomerArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.customer_service.get_customer(parameters, self).await
+        self.customer_service.get_customer(parameters, context).await
     }
 
     #[tool(
@@ -94,17 +74,19 @@ impl LagoMcpServer {
     pub async fn list_customers(
         &self,
         parameters: Parameters<crate::tools::customer::ListCustomersArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.customer_service.list_customers(parameters, self).await
+        self.customer_service.list_customers(parameters, context).await
     }
 
     #[tool(description = "Create or update a customer in Lago")]
     pub async fn create_customer(
         &self,
         parameters: Parameters<crate::tools::customer::CreateCustomerArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.customer_service
-            .create_customer(parameters, self)
+            .create_customer(parameters, context)
             .await
     }
 
@@ -112,9 +94,10 @@ impl LagoMcpServer {
     pub async fn get_billable_metric(
         &self,
         parameters: Parameters<crate::tools::billable_metric::GetBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.billable_metric_service
-            .get_billable_metric(parameters, self)
+            .get_billable_metric(parameters, context)
             .await
     }
 
@@ -124,9 +107,10 @@ impl LagoMcpServer {
     pub async fn list_billable_metrics(
         &self,
         parameters: Parameters<crate::tools::billable_metric::ListBillableMetricsArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.billable_metric_service
-            .list_billable_metrics(parameters, self)
+            .list_billable_metrics(parameters, context)
             .await
     }
 
@@ -134,9 +118,10 @@ impl LagoMcpServer {
     pub async fn create_billable_metric(
         &self,
         parameters: Parameters<crate::tools::billable_metric::CreateBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.billable_metric_service
-            .create_billable_metric(parameters, self)
+            .create_billable_metric(parameters, context)
             .await
     }
 }
@@ -161,22 +146,8 @@ impl ServerHandler for LagoMcpServer {
         context: RequestContext<RoleServer>,
     ) -> Result<InitializeResult, McpError> {
         if let Some(http_request_part) = context.extensions.get::<axum::http::request::Parts>() {
-            let initialize_headers = &http_request_part.headers;
             let initialize_uri = &http_request_part.uri;
-
-            let api_key = initialize_headers
-                .get("X-LAGO-API-KEY")
-                .and_then(|v| v.to_str().ok())
-                .map(|s| s.to_string());
-
-            let api_url = initialize_headers
-                .get("X-LAGO-API-URL")
-                .and_then(|v| v.to_str().ok())
-                .map(|s| s.to_string())
-                .or_else(|| std::env::var("LAGO_API_URL").ok());
-
-            self.set_credentials(api_key, api_url).await;
-            tracing::info!(?initialize_headers, %initialize_uri, "initialize from http server");
+            tracing::info!(%initialize_uri, "initialize from http server");
         }
         Ok(self.get_info())
     }

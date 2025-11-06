@@ -1,5 +1,10 @@
 use anyhow::Result;
-use rmcp::{handler::server::tool::Parameters, model::*};
+use rmcp::{
+    handler::server::tool::Parameters,
+    service::RequestContext,
+    RoleServer,
+    model::*
+};
 use serde::{Deserialize, Serialize};
 
 use lago_types::{
@@ -10,7 +15,6 @@ use lago_types::{
     },
 };
 
-use crate::server::LagoMcpServer;
 use crate::tools::{create_lago_client, error_result, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -83,9 +87,9 @@ impl CustomerService {
     pub async fn list_customers(
         &self,
         Parameters(args): Parameters<ListCustomersArgs>,
-        server: &LagoMcpServer,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client(server).await {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
@@ -110,9 +114,9 @@ impl CustomerService {
     pub async fn get_customer(
         &self,
         Parameters(args): Parameters<GetCustomerArgs>,
-        server: &LagoMcpServer,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client(server).await {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
@@ -137,7 +141,7 @@ impl CustomerService {
     pub async fn create_customer(
         &self,
         Parameters(args): Parameters<CreateCustomerArgs>,
-        server: &LagoMcpServer,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         let mut customer_input = CreateCustomerInput::new(args.external_id);
 
@@ -222,7 +226,7 @@ impl CustomerService {
 
         let request = CreateCustomerRequest::new(customer_input);
 
-        let client = match create_lago_client(server).await {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
