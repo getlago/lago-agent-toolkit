@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rmcp::{handler::server::tool::Parameters, model::*};
+use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
 
 use lago_types::{
@@ -87,8 +87,9 @@ impl BillableMetricService {
     pub async fn list_billable_metrics(
         &self,
         Parameters(args): Parameters<ListBillableMetricsArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client() {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
@@ -113,8 +114,9 @@ impl BillableMetricService {
     pub async fn get_billable_metric(
         &self,
         Parameters(args): Parameters<GetBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client() {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
@@ -139,6 +141,7 @@ impl BillableMetricService {
     pub async fn create_billable_metric(
         &self,
         Parameters(args): Parameters<CreateBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         // Parse aggregation type
         let aggregation_type = match args
@@ -203,7 +206,7 @@ impl BillableMetricService {
 
         let request = CreateBillableMetricRequest::new(metric_input);
 
-        let client = match create_lago_client() {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };

@@ -43,8 +43,9 @@ impl LagoMcpServer {
     pub async fn get_invoice(
         &self,
         parameters: Parameters<crate::tools::invoice::GetInvoiceArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.invoice_service.get_invoice(parameters).await
+        self.invoice_service.get_invoice(parameters, context).await
     }
 
     #[tool(
@@ -53,16 +54,22 @@ impl LagoMcpServer {
     pub async fn list_invoices(
         &self,
         parameters: Parameters<crate::tools::invoice::ListInvoicesArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.invoice_service.list_invoices(parameters).await
+        self.invoice_service
+            .list_invoices(parameters, context)
+            .await
     }
 
     #[tool(description = "Get a specific customer by their external ID")]
     pub async fn get_customer(
         &self,
         parameters: Parameters<crate::tools::customer::GetCustomerArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.customer_service.get_customer(parameters).await
+        self.customer_service
+            .get_customer(parameters, context)
+            .await
     }
 
     #[tool(
@@ -71,25 +78,32 @@ impl LagoMcpServer {
     pub async fn list_customers(
         &self,
         parameters: Parameters<crate::tools::customer::ListCustomersArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.customer_service.list_customers(parameters).await
+        self.customer_service
+            .list_customers(parameters, context)
+            .await
     }
 
     #[tool(description = "Create or update a customer in Lago")]
     pub async fn create_customer(
         &self,
         parameters: Parameters<crate::tools::customer::CreateCustomerArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.customer_service.create_customer(parameters).await
+        self.customer_service
+            .create_customer(parameters, context)
+            .await
     }
 
     #[tool(description = "Get a specific billable metric by its code")]
     pub async fn get_billable_metric(
         &self,
         parameters: Parameters<crate::tools::billable_metric::GetBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.billable_metric_service
-            .get_billable_metric(parameters)
+            .get_billable_metric(parameters, context)
             .await
     }
 
@@ -99,9 +113,10 @@ impl LagoMcpServer {
     pub async fn list_billable_metrics(
         &self,
         parameters: Parameters<crate::tools::billable_metric::ListBillableMetricsArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.billable_metric_service
-            .list_billable_metrics(parameters)
+            .list_billable_metrics(parameters, context)
             .await
     }
 
@@ -109,9 +124,10 @@ impl LagoMcpServer {
     pub async fn create_billable_metric(
         &self,
         parameters: Parameters<crate::tools::billable_metric::CreateBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.billable_metric_service
-            .create_billable_metric(parameters)
+            .create_billable_metric(parameters, context)
             .await
     }
 }
@@ -136,9 +152,8 @@ impl ServerHandler for LagoMcpServer {
         context: RequestContext<RoleServer>,
     ) -> Result<InitializeResult, McpError> {
         if let Some(http_request_part) = context.extensions.get::<axum::http::request::Parts>() {
-            let initialize_headers = &http_request_part.headers;
             let initialize_uri = &http_request_part.uri;
-            tracing::info!(?initialize_headers, %initialize_uri, "initialize from http server");
+            tracing::info!(%initialize_uri, "initialize from http server");
         }
         Ok(self.get_info())
     }

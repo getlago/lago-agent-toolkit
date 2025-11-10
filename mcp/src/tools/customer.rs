@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rmcp::{handler::server::tool::Parameters, model::*};
+use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
 
 use lago_types::{
@@ -82,8 +82,9 @@ impl CustomerService {
     pub async fn list_customers(
         &self,
         Parameters(args): Parameters<ListCustomersArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client() {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
@@ -108,8 +109,9 @@ impl CustomerService {
     pub async fn get_customer(
         &self,
         Parameters(args): Parameters<GetCustomerArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client() {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
@@ -134,6 +136,7 @@ impl CustomerService {
     pub async fn create_customer(
         &self,
         Parameters(args): Parameters<CreateCustomerArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         let mut customer_input = CreateCustomerInput::new(args.external_id);
 
@@ -218,7 +221,7 @@ impl CustomerService {
 
         let request = CreateCustomerRequest::new(customer_input);
 
-        let client = match create_lago_client() {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };

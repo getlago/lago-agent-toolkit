@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rmcp::{handler::server::tool::Parameters, model::*};
+use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
 
 use lago_types::{
@@ -90,8 +90,9 @@ impl InvoiceService {
     pub async fn list_invoices(
         &self,
         Parameters(args): Parameters<ListInvoicesArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client() {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
@@ -116,8 +117,9 @@ impl InvoiceService {
     pub async fn get_invoice(
         &self,
         Parameters(args): Parameters<GetInvoiceArgs>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client() {
+        let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
