@@ -55,6 +55,12 @@ async fn main() -> Result<()> {
             service.waiting().await?;
         }
         Commands::Sse { port, host } => {
+            tracing::info!(
+                "Starting Lago MCP Server with sse transport on {}:{}",
+                host,
+                port,
+            );
+
             let service = StreamableHttpService::new(
                 || Ok(LagoMcpServer::new()),
                 LocalSessionManager::default().into(),
