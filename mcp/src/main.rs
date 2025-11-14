@@ -67,7 +67,9 @@ async fn main() -> Result<()> {
                 Default::default(),
             );
 
-            let router = axum::Router::new().nest_service("/mcp", service);
+            let router = axum::Router::new()
+                .nest_service("/mcp", service)
+                .route("/health", axum::routing::get(|| async {}));
             let address = format!("{}:{}", host, port);
             let tcp_listener = tokio::net::TcpListener::bind(address).await?;
             let _ = axum::serve(tcp_listener, router)
