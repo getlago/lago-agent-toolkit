@@ -220,14 +220,34 @@ Create a new billable metric in Lago.
 
 ## Setup and Configuration
 
+### Add LAGO_MCP_SERVER_PATH
+
+- Add `LAGO_MCP_SERVER_PATH` to your `.bashrc` or `.zshrc` file
+- Modify the `lago alias`
+
+```bash
+# This path depends on where you put lago-agent-toolkit on your computer.
+export LAGO_MCP_SERVER_PATH=/home/lago/lago-agent-toolkit/mcp
+
+alias lago="docker-compose -f $LAGO_PATH/docker-compose.dev.yml -f $LAGO_LICENSE_PATH/docker-compose.dev.yml -f $LAGO_MCP_SERVER_PATH/docker-compose.dev.yml"
+```
+
+- Add `mcp.lago.dev` to your `/etc/hosts` file
+
 ### Environment Variables
 
 The server requires the following environment variables:
 
 ```bash
 # Required: Lago API credentials
-LAGO_API_KEY=your_lago_api_key
 LAGO_API_URL=https://api.getlago.com/api/v1
+
+# Required: Mistral API credentials
+MISTRAL_AGENT_ID=your_mistral_agent_id
+MISTRAL_API_KEY=your_mistral_api_key
+
+# Optional: When API key is not sent through headers
+LAGO_API_KEY=your_lago_api_key
 
 # Optional: Logging level
 RUST_LOG=info
@@ -244,7 +264,7 @@ docker build -t mcp-server_dev .
 
 2. Run the container:
 ```bash
-docker run -e LAGO_API_KEY=your_api_key -e LAGO_API_URL=your_api_url mcp-server_dev
+docker run -e LAGO_API_KEY=your_api_key -e LAGO_API_URL=your_api_url -e MISTRAL_AGENT_ID=your_mistral_agent_id -e MISTRAL_API_KEY=your_mistral_api_key mcp-server_dev
 ```
 
 #### Option 2: Building from Source

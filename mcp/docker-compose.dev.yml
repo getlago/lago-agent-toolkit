@@ -1,0 +1,22 @@
+services:
+  mcp-server:
+    image: lago-mcp-server_dev
+    container_name: lago_mcp_server_dev
+    build:
+      context: $LAGO_MCP_SERVER_PATH
+      dockerfile: $LAGO_MCP_SERVER_PATH/Dockerfile
+    restart: unless-stopped
+    command: ["./lago-mcp-server", "sse", "--host", "0.0.0.0", "--port", "3001"]
+    env_file:
+      - path: ./.env.development
+        required: false
+    environment:
+      - LAGO_API_URL=https://api.lago.dev/api/v1
+    ports:
+      - "3001:3001"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp_server.rule=Host(`mcp.lago.dev`)"
+      - "traefik.http.routers.mcp_server.entrypoints=web"
+      - "traefik.http.routers.mcp_server.service=mcp_server"
+      - "traefik.http.services.mcp_server.loadbalancer.server.port=3001"
