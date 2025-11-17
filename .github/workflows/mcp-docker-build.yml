@@ -1,6 +1,8 @@
 name: MCP Docker Build
 on:
   push:
+    tags:
+      - "*"
     branches:
       - main
     paths:
