@@ -1,0 +1,22 @@
+FROM rust:1.88-slim-trixie
+
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN cargo install cargo-watch
+
+WORKDIR /app
+
+RUN cargo init . --name lago-mcp-server
+
+COPY Cargo.toml Cargo.lock ./
+
+RUN cargo fetch
+
+ENV PATH="/usr/local/cargo/bin:${PATH}"
+ENV RUST_LOG=info
+
+CMD ["cargo", "watch", "-x", "run -- sse --host 0.0.0.0 --port 3001"]
