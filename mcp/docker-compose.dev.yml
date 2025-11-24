@@ -10,7 +10,7 @@ services:
       - path: ./.env.development
         required: false
     environment:
-      - LAGO_API_URL=https://api.lago.dev/api/v1
+      - LAGO_API_URL=http://api:3000/api/v1
       - RUST_LOG=info
     ports:
       - "3001:3001"

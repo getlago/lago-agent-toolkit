@@ -9,6 +9,7 @@ use rmcp::{
     service::RequestContext,
 };
 use serde::Serialize;
+use std::env;
 
 pub async fn create_lago_client(
     context: &RequestContext<RoleServer>,
@@ -22,11 +23,7 @@ pub async fn create_lago_client(
                 .get("X-LAGO-API-KEY")
                 .and_then(|v| v.to_str().ok())
                 .map(|s| s.to_string());
-            let url = parts
-                .headers
-                .get("X-LAGO-API-URL")
-                .and_then(|v| v.to_str().ok())
-                .map(|s| s.to_string());
+            let url = env::var("LAGO_API_URL").ok();
             (key, url)
         })
         .unwrap_or((None, None));
