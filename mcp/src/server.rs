@@ -61,6 +61,19 @@ impl LagoMcpServer {
             .await
     }
 
+    #[tool(
+        description = "Preview an invoice before creating it. Use this to estimate billing amounts for new subscriptions, plan upgrades, or to see the effect of coupons. You can either reference an existing customer by external_id or provide inline customer details."
+    )]
+    pub async fn preview_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::PreviewInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .preview_invoice(parameters, context)
+            .await
+    }
+
     #[tool(description = "Get a specific customer by their external ID")]
     pub async fn get_customer(
         &self,
