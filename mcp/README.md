@@ -13,7 +13,9 @@ The Model Context Protocol (MCP) is a standardized way for AI assistants to inte
 - **Invoice Management**: Query and retrieve invoice data from Lago
 - **Customer Management**: Create, retrieve, and list customers in Lago
 - **Billable Metric Management**: Create, retrieve, and list billable metrics in Lago
-- **Filtering Support**: Filter invoices, customers, and billable metrics by various criteria
+- **Activity Log Management**: Query activity logs to track actions performed on resources
+- **API Log Management**: Query API logs to monitor API requests and responses
+- **Filtering Support**: Filter invoices, customers, billable metrics, and logs by various criteria
 - **Pagination**: Handle large result sets with built-in pagination
 - **Type Safety**: Fully typed requests and responses using Rust
 - **Multi-tenant Support**: Per-request client creation for handling multiple tenants
@@ -215,6 +217,94 @@ Create a new billable metric in Lago.
       "values": ["us-east-1", "eu-west-1"]
     }
   ]
+}
+```
+
+### Activity Log Tools
+
+#### 9. `get_activity_log`
+Retrieve a specific activity log by its activity ID.
+
+**Parameters:**
+- `activity_id` (string, required): The unique identifier of the activity log
+
+**Example:**
+```json
+{
+  "activity_id": "activity_uuid_123"
+}
+```
+
+#### 10. `list_activity_logs`
+List activity logs with optional filtering and pagination.
+
+**Parameters:**
+- `activity_types` (array of strings, optional): Filter by activity types (e.g., "invoice.created", "billable_metric.created")
+- `activity_sources` (array of strings, optional): Filter by activity sources
+  - Possible values: `api`, `front`, `system`
+- `user_emails` (array of strings, optional): Filter by user email addresses
+- `external_customer_id` (string, optional): Filter by external customer ID
+- `external_subscription_id` (string, optional): Filter by external subscription ID
+- `resource_ids` (array of strings, optional): Filter by resource IDs
+- `resource_types` (array of strings, optional): Filter by resource types (e.g., "Invoice", "BillableMetric", "Customer")
+- `from_date` (string, optional): Filter logs from this date (YYYY-MM-DD format)
+- `to_date` (string, optional): Filter logs until this date (YYYY-MM-DD format)
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "activity_types": ["invoice.created", "customer.created"],
+  "activity_sources": ["api", "front"],
+  "resource_types": ["Invoice"],
+  "from_date": "2025-01-01",
+  "to_date": "2025-01-31",
+  "page": 1,
+  "per_page": 10
+}
+```
+
+### API Log Tools
+
+#### 11. `get_api_log`
+Retrieve a specific API log by its request ID.
+
+**Parameters:**
+- `request_id` (string, required): The unique request ID of the API log
+
+**Example:**
+```json
+{
+  "request_id": "request_uuid_123"
+}
+```
+
+#### 12. `list_api_logs`
+List API logs with optional filtering and pagination.
+
+**Parameters:**
+- `http_methods` (array of strings, optional): Filter by HTTP methods
+  - Possible values: `post`, `put`, `delete`
+- `http_statuses` (array of strings, optional): Filter by HTTP statuses - can be numeric codes (e.g., "200", "404", "500") or outcomes ("succeeded", "failed")
+- `api_version` (string, optional): Filter by API version (e.g., "v1")
+- `request_paths` (array of strings, optional): Filter by request paths (e.g., "/invoices", "/customers")
+- `from_date` (string, optional): Filter logs from this date (YYYY-MM-DD format)
+- `to_date` (string, optional): Filter logs until this date (YYYY-MM-DD format)
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "http_methods": ["post", "put"],
+  "http_statuses": ["failed", "500"],
+  "api_version": "v1",
+  "request_paths": ["/invoices"],
+  "from_date": "2025-01-01",
+  "to_date": "2025-01-31",
+  "page": 1,
+  "per_page": 10
 }
 ```
 
@@ -447,6 +537,78 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+### Activity Log Data
+```json
+{
+  "activity_id": "uuid",
+  "activity_type": "invoice.created",
+  "activity_source": "api",
+  "logged_at": "2025-01-15T10:30:00Z",
+  "created_at": "2025-01-15T10:30:00Z",
+  "user_email": "admin@example.com",
+  "resource_id": "resource_uuid",
+  "resource_type": "Invoice",
+  "external_customer_id": "customer_123",
+  "external_subscription_id": null,
+  "activity_object": {
+    // Activity-specific data
+  }
+}
+```
+
+**For activity log lists:**
+```json
+{
+  "activity_logs": [
+    // Array of activity log objects
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 5,
+    "total_count": 100,
+    "next_page": 2,
+    "prev_page": null
+  }
+}
+```
+
+### API Log Data
+```json
+{
+  "request_id": "uuid",
+  "api_version": "v1",
+  "client": "lago-ruby-client",
+  "http_method": "post",
+  "http_status": 200,
+  "request_origin": "https://example.com",
+  "request_path": "/api/v1/invoices",
+  "request_body": {
+    // Request body data
+  },
+  "request_response": {
+    // Response data
+  },
+  "logged_at": "2025-01-15T10:30:00Z",
+  "created_at": "2025-01-15T10:30:00Z"
+}
+```
+
+**For API log lists:**
+```json
+{
+  "api_logs": [
+    // Array of API log objects
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 10,
+    "total_count": 200,
+    "next_page": 2,
+    "prev_page": null
+  }
+}
+```
+
 ## Development
 
 ### Project Structure
@@ -456,9 +618,11 @@ mcp/
 │   ├── main.rs          # Application entry point
 │   ├── server.rs        # MCP server implementation
 │   ├── tools/           # Tool implementations
-│   │   ├── invoice.rs   # Invoice-related tools
-│   │   ├── customer.rs  # Customer-related tools
-│   │   └── billable_metric.rs # Billable metric-related tools
+│   │   ├── activity_log.rs  # Activity log-related tools
+│   │   ├── api_log.rs       # API log-related tools
+│   │   ├── billable_metric.rs # Billable metric-related tools
+│   │   ├── customer.rs      # Customer-related tools
+│   │   └── invoice.rs       # Invoice-related tools
 │   └── tools.rs         # Shared utilities and client creation
 ├── Cargo.toml           # Rust dependencies
 └── Dockerfile           # Docker configuration
