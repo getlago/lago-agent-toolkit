@@ -8,6 +8,8 @@ use rmcp::{
 };
 use std::future::Future;
 
+use crate::tools::activity_log::ActivityLogService;
+use crate::tools::api_log::ApiLogService;
 use crate::tools::billable_metric::BillableMetricService;
 use crate::tools::customer::CustomerService;
 use crate::tools::invoice::InvoiceService;
@@ -18,6 +20,8 @@ pub struct LagoMcpServer {
     invoice_service: InvoiceService,
     customer_service: CustomerService,
     billable_metric_service: BillableMetricService,
+    activity_log_service: ActivityLogService,
+    api_log_service: ApiLogService,
     tool_router: ToolRouter<Self>,
 }
 
@@ -27,11 +31,15 @@ impl LagoMcpServer {
         let invoice_service = InvoiceService::new();
         let customer_service = CustomerService::new();
         let billable_metric_service = BillableMetricService::new();
+        let activity_log_service = ActivityLogService::new();
+        let api_log_service = ApiLogService::new();
 
         Self {
             invoice_service,
             customer_service,
             billable_metric_service,
+            activity_log_service,
+            api_log_service,
             tool_router: Self::tool_router(),
         }
     }
@@ -143,6 +151,52 @@ impl LagoMcpServer {
             .create_billable_metric(parameters, context)
             .await
     }
+
+    #[tool(description = "Get a specific activity log by its activity ID")]
+    pub async fn get_activity_log(
+        &self,
+        parameters: Parameters<crate::tools::activity_log::GetActivityLogArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.activity_log_service
+            .get_activity_log(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "List activity logs from Lago with optional filtering by activity type, source, user email, customer, subscription, resource type and date range"
+    )]
+    pub async fn list_activity_logs(
+        &self,
+        parameters: Parameters<crate::tools::activity_log::ListActivityLogsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.activity_log_service
+            .list_activity_logs(parameters, context)
+            .await
+    }
+
+    #[tool(description = "Get a specific API log by its request ID")]
+    pub async fn get_api_log(
+        &self,
+        parameters: Parameters<crate::tools::api_log::GetApiLogArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.api_log_service.get_api_log(parameters, context).await
+    }
+
+    #[tool(
+        description = "List API logs from Lago with optional filtering by HTTP method, status, API version, request path and date range"
+    )]
+    pub async fn list_api_logs(
+        &self,
+        parameters: Parameters<crate::tools::api_log::ListApiLogsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.api_log_service
+            .list_api_logs(parameters, context)
+            .await
+    }
 }
 
 #[tool_handler]
@@ -150,7 +204,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, billable metrics and other lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, billable metrics, activity logs, API logs and other lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
