@@ -12,6 +12,7 @@ use crate::tools::activity_log::ActivityLogService;
 use crate::tools::api_log::ApiLogService;
 use crate::tools::applied_coupon::AppliedCouponService;
 use crate::tools::billable_metric::BillableMetricService;
+use crate::tools::coupon::CouponService;
 use crate::tools::customer::CustomerService;
 use crate::tools::invoice::InvoiceService;
 
@@ -24,6 +25,7 @@ pub struct LagoMcpServer {
     activity_log_service: ActivityLogService,
     api_log_service: ApiLogService,
     applied_coupon_service: AppliedCouponService,
+    coupon_service: CouponService,
     tool_router: ToolRouter<Self>,
 }
 
@@ -36,6 +38,7 @@ impl LagoMcpServer {
         let activity_log_service = ActivityLogService::new();
         let api_log_service = ApiLogService::new();
         let applied_coupon_service = AppliedCouponService::new();
+        let coupon_service = CouponService::new();
 
         Self {
             invoice_service,
@@ -44,6 +47,7 @@ impl LagoMcpServer {
             activity_log_service,
             api_log_service,
             applied_coupon_service,
+            coupon_service,
             tool_router: Self::tool_router(),
         }
     }
@@ -227,6 +231,55 @@ impl LagoMcpServer {
             .apply_coupon(parameters, context)
             .await
     }
+
+    #[tool(description = "List all coupons in Lago with optional pagination")]
+    pub async fn list_coupons(
+        &self,
+        parameters: Parameters<crate::tools::coupon::ListCouponsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.coupon_service.list_coupons(parameters, context).await
+    }
+
+    #[tool(description = "Get a specific coupon by its unique code")]
+    pub async fn get_coupon(
+        &self,
+        parameters: Parameters<crate::tools::coupon::GetCouponArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.coupon_service.get_coupon(parameters, context).await
+    }
+
+    #[tool(
+        description = "Create a new coupon in Lago. Coupons can be either fixed_amount (with amount_cents and amount_currency) or percentage (with percentage_rate). Frequency can be 'once', 'recurring', or 'forever'."
+    )]
+    pub async fn create_coupon(
+        &self,
+        parameters: Parameters<crate::tools::coupon::CreateCouponArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.coupon_service.create_coupon(parameters, context).await
+    }
+
+    #[tool(
+        description = "Update an existing coupon in Lago. Only provided fields will be updated."
+    )]
+    pub async fn update_coupon(
+        &self,
+        parameters: Parameters<crate::tools::coupon::UpdateCouponArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.coupon_service.update_coupon(parameters, context).await
+    }
+
+    #[tool(description = "Delete a coupon by its unique code. This will terminate the coupon.")]
+    pub async fn delete_coupon(
+        &self,
+        parameters: Parameters<crate::tools::coupon::DeleteCouponArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.coupon_service.delete_coupon(parameters, context).await
+    }
 }
 
 #[tool_handler]
@@ -234,7 +287,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, billable metrics, activity logs, API logs, applied coupons and other lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, billable metrics, coupons, applied coupons, activity logs, API logs and other lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
