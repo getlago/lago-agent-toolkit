@@ -91,6 +91,7 @@ impl AppliedCouponService {
             }
             Err(e) => {
                 let error_message = format!("Failed to list applied coupons: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -139,6 +140,7 @@ impl AppliedCouponService {
             }
             Err(e) => {
                 let error_message = format!("Failed to apply coupon: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }

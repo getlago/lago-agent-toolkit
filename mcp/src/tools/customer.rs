@@ -100,7 +100,8 @@ impl CustomerService {
                 Ok(success_result(&result))
             }
             Err(e) => {
-                let error_message = format!("failed to list customers: {e}");
+                let error_message = format!("Failed to list customers: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -127,6 +128,7 @@ impl CustomerService {
             }
             Err(e) => {
                 let error_message = format!("Failed to get customer: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -236,6 +238,7 @@ impl CustomerService {
             }
             Err(e) => {
                 let error_message = format!("Failed to create customer: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }

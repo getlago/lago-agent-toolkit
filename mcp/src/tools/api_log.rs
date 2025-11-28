@@ -126,6 +126,7 @@ impl ApiLogService {
             }
             Err(e) => {
                 let error_message = format!("Failed to list API logs: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -152,6 +153,7 @@ impl ApiLogService {
             }
             Err(e) => {
                 let error_message = format!("Failed to get API log: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
