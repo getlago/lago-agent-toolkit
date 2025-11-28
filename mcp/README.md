@@ -15,7 +15,8 @@ The Model Context Protocol (MCP) is a standardized way for AI assistants to inte
 - **Billable Metric Management**: Create, retrieve, and list billable metrics in Lago
 - **Activity Log Management**: Query activity logs to track actions performed on resources
 - **API Log Management**: Query API logs to monitor API requests and responses
-- **Filtering Support**: Filter invoices, customers, billable metrics, and logs by various criteria
+- **Applied Coupon Management**: Apply coupons to customers and list applied coupons
+- **Filtering Support**: Filter invoices, customers, billable metrics, logs, and applied coupons by various criteria
 - **Pagination**: Handle large result sets with built-in pagination
 - **Type Safety**: Fully typed requests and responses using Rust
 - **Multi-tenant Support**: Per-request client creation for handling multiple tenants
@@ -305,6 +306,53 @@ List API logs with optional filtering and pagination.
   "to_date": "2025-01-31",
   "page": 1,
   "per_page": 10
+}
+```
+
+### Applied Coupon Tools
+
+#### 13. `list_applied_coupons`
+List applied coupons with optional filtering and pagination.
+
+**Parameters:**
+- `status` (string, optional): Filter by applied coupon status
+  - Possible values: `active`, `terminated`
+- `external_customer_id` (string, optional): Filter by customer's external ID
+- `coupon_codes` (array of strings, optional): Filter by one or more coupon codes
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "status": "active",
+  "external_customer_id": "customer_123",
+  "coupon_codes": ["WELCOME10", "SUMMER20"],
+  "page": 1,
+  "per_page": 10
+}
+```
+
+#### 14. `apply_coupon`
+Apply a coupon to a customer. Use this to give discounts before or during a subscription.
+
+**Parameters:**
+- `external_customer_id` (string, required): The external ID of the customer
+- `coupon_code` (string, required): The code of the coupon to apply
+- `frequency` (string, optional): Frequency of coupon application
+  - Possible values: `once`, `recurring`, `forever`
+- `frequency_duration` (integer, optional): Number of billing periods for recurring coupons
+- `amount_cents` (integer, optional): Override the coupon amount in cents (for fixed_amount coupons)
+- `amount_currency` (string, optional): Currency for the amount override (required with amount_cents)
+- `percentage_rate` (string, optional): Override the percentage rate (for percentage coupons)
+
+**Example:**
+```json
+{
+  "external_customer_id": "customer_123",
+  "coupon_code": "WELCOME10",
+  "frequency": "recurring",
+  "frequency_duration": 6
 }
 ```
 
@@ -609,6 +657,45 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+### Applied Coupon Data
+```json
+{
+  "lago_id": "uuid",
+  "lago_coupon_id": "uuid",
+  "coupon_code": "WELCOME10",
+  "coupon_name": "Welcome Discount",
+  "lago_customer_id": "uuid",
+  "external_customer_id": "customer_123",
+  "status": "active",
+  "frequency": "recurring",
+  "amount_cents": 1000,
+  "amount_cents_remaining": 500,
+  "amount_currency": "USD",
+  "percentage_rate": null,
+  "frequency_duration": 6,
+  "frequency_duration_remaining": 3,
+  "expiration_at": "2025-12-31T23:59:59Z",
+  "created_at": "2025-01-15T10:30:00Z",
+  "terminated_at": null
+}
+```
+
+**For applied coupon lists:**
+```json
+{
+  "applied_coupons": [
+    // Array of applied coupon objects
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 3,
+    "total_count": 50,
+    "next_page": 2,
+    "prev_page": null
+  }
+}
+```
+
 ## Development
 
 ### Project Structure
@@ -618,11 +705,12 @@ mcp/
 │   ├── main.rs          # Application entry point
 │   ├── server.rs        # MCP server implementation
 │   ├── tools/           # Tool implementations
-│   │   ├── activity_log.rs  # Activity log-related tools
-│   │   ├── api_log.rs       # API log-related tools
+│   │   ├── activity_log.rs    # Activity log-related tools
+│   │   ├── api_log.rs         # API log-related tools
+│   │   ├── applied_coupon.rs  # Applied coupon-related tools
 │   │   ├── billable_metric.rs # Billable metric-related tools
-│   │   ├── customer.rs      # Customer-related tools
-│   │   └── invoice.rs       # Invoice-related tools
+│   │   ├── customer.rs        # Customer-related tools
+│   │   └── invoice.rs         # Invoice-related tools
 │   └── tools.rs         # Shared utilities and client creation
 ├── Cargo.toml           # Rust dependencies
 └── Dockerfile           # Docker configuration

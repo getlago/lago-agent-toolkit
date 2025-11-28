@@ -10,6 +10,7 @@ use std::future::Future;
 
 use crate::tools::activity_log::ActivityLogService;
 use crate::tools::api_log::ApiLogService;
+use crate::tools::applied_coupon::AppliedCouponService;
 use crate::tools::billable_metric::BillableMetricService;
 use crate::tools::customer::CustomerService;
 use crate::tools::invoice::InvoiceService;
@@ -22,6 +23,7 @@ pub struct LagoMcpServer {
     billable_metric_service: BillableMetricService,
     activity_log_service: ActivityLogService,
     api_log_service: ApiLogService,
+    applied_coupon_service: AppliedCouponService,
     tool_router: ToolRouter<Self>,
 }
 
@@ -33,6 +35,7 @@ impl LagoMcpServer {
         let billable_metric_service = BillableMetricService::new();
         let activity_log_service = ActivityLogService::new();
         let api_log_service = ApiLogService::new();
+        let applied_coupon_service = AppliedCouponService::new();
 
         Self {
             invoice_service,
@@ -40,6 +43,7 @@ impl LagoMcpServer {
             billable_metric_service,
             activity_log_service,
             api_log_service,
+            applied_coupon_service,
             tool_router: Self::tool_router(),
         }
     }
@@ -197,6 +201,32 @@ impl LagoMcpServer {
             .list_api_logs(parameters, context)
             .await
     }
+
+    #[tool(
+        description = "List applied coupons from Lago with optional filtering by status, customer and coupon codes"
+    )]
+    pub async fn list_applied_coupons(
+        &self,
+        parameters: Parameters<crate::tools::applied_coupon::ListAppliedCouponsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.applied_coupon_service
+            .list_applied_coupons(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Apply a coupon to a customer. Use this to give discounts before or during a subscription."
+    )]
+    pub async fn apply_coupon(
+        &self,
+        parameters: Parameters<crate::tools::applied_coupon::ApplyCouponArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.applied_coupon_service
+            .apply_coupon(parameters, context)
+            .await
+    }
 }
 
 #[tool_handler]
@@ -204,7 +234,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, billable metrics, activity logs, API logs and other lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, billable metrics, activity logs, API logs, applied coupons and other lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
