@@ -106,6 +106,7 @@ impl BillableMetricService {
             }
             Err(e) => {
                 let error_message = format!("Failed to list billable metrics: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -132,6 +133,7 @@ impl BillableMetricService {
             }
             Err(e) => {
                 let error_message = format!("Failed to get billable metric: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -221,6 +223,7 @@ impl BillableMetricService {
             }
             Err(e) => {
                 let error_message = format!("Failed to create billable metric: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }

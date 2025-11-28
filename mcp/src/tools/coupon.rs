@@ -147,6 +147,7 @@ impl CouponService {
             }
             Err(e) => {
                 let error_message = format!("Failed to list coupons: {e}");
+                tracing::error!("{}", error_message);
                 Ok(error_result(error_message))
             }
         }
@@ -173,6 +174,7 @@ impl CouponService {
             }
             Err(e) => {
                 let error_message = format!("Failed to get coupon: {e}");
+                tracing::error!("{}", error_message);
                 Ok(error_result(error_message))
             }
         }
@@ -291,6 +293,7 @@ impl CouponService {
             }
             Err(e) => {
                 let error_message = format!("Failed to create coupon: {e}");
+                tracing::error!("{}", error_message);
                 Ok(error_result(error_message))
             }
         }
@@ -389,6 +392,7 @@ impl CouponService {
             }
             Err(e) => {
                 let error_message = format!("Failed to update coupon: {e}");
+                tracing::error!("{}", error_message);
                 Ok(error_result(error_message))
             }
         }
@@ -416,6 +420,7 @@ impl CouponService {
             }
             Err(e) => {
                 let error_message = format!("Failed to delete coupon: {e}");
+                tracing::error!("{}", error_message);
                 Ok(error_result(error_message))
             }
         }

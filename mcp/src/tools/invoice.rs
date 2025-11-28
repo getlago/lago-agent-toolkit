@@ -149,7 +149,8 @@ impl InvoiceService {
                 Ok(success_result(&result))
             }
             Err(e) => {
-                let error_message = format!("failed to list invoices: {e}");
+                let error_message = format!("Failed to list invoices: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -176,6 +177,7 @@ impl InvoiceService {
             }
             Err(e) => {
                 let error_message = format!("Failed to get invoice: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -308,6 +310,7 @@ impl InvoiceService {
             }
             Err(e) => {
                 let error_message = format!("Failed to preview invoice: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }

@@ -130,6 +130,7 @@ impl ActivityLogService {
             }
             Err(e) => {
                 let error_message = format!("Failed to list activity logs: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
@@ -156,6 +157,7 @@ impl ActivityLogService {
             }
             Err(e) => {
                 let error_message = format!("Failed to get activity log: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
