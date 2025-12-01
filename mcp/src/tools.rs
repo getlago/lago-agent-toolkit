@@ -3,6 +3,7 @@ pub mod api_log;
 pub mod applied_coupon;
 pub mod billable_metric;
 pub mod coupon;
+pub mod credit_note;
 pub mod customer;
 pub mod event;
 pub mod invoice;

@@ -93,6 +93,12 @@ Once configured, you can ask Claude natural language questions about your billin
 - **`get_event`**: Retrieve a usage event by transaction ID
 - **`create_event`**: Send a usage event to Lago
 
+### Credit Notes
+- **`get_credit_note`**: Retrieve a specific credit note by Lago ID
+- **`list_credit_notes`**: List credit notes with optional filtering
+- **`create_credit_note`**: Create a credit note for an invoice
+- **`update_credit_note`**: Update a credit note's refund status
+
 ### Activity Logs
 - **`get_activity_log`**: Retrieve a specific activity log
 - **`list_activity_logs`**: List activity logs with optional filtering

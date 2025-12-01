@@ -13,6 +13,7 @@ use crate::tools::api_log::ApiLogService;
 use crate::tools::applied_coupon::AppliedCouponService;
 use crate::tools::billable_metric::BillableMetricService;
 use crate::tools::coupon::CouponService;
+use crate::tools::credit_note::CreditNoteService;
 use crate::tools::customer::CustomerService;
 use crate::tools::event::EventService;
 use crate::tools::invoice::InvoiceService;
@@ -27,6 +28,7 @@ pub struct LagoMcpServer {
     api_log_service: ApiLogService,
     applied_coupon_service: AppliedCouponService,
     coupon_service: CouponService,
+    credit_note_service: CreditNoteService,
     event_service: EventService,
     tool_router: ToolRouter<Self>,
 }
@@ -41,6 +43,7 @@ impl LagoMcpServer {
         let api_log_service = ApiLogService::new();
         let applied_coupon_service = AppliedCouponService::new();
         let coupon_service = CouponService::new();
+        let credit_note_service = CreditNoteService::new();
         let event_service = EventService::new();
 
         Self {
@@ -51,6 +54,7 @@ impl LagoMcpServer {
             api_log_service,
             applied_coupon_service,
             coupon_service,
+            credit_note_service,
             event_service,
             tool_router: Self::tool_router(),
         }
@@ -304,6 +308,56 @@ impl LagoMcpServer {
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.event_service.create_event(parameters, context).await
     }
+
+    #[tool(
+        description = "List credit notes from Lago with optional filtering by customer, dates, reason, status, and amount range"
+    )]
+    pub async fn list_credit_notes(
+        &self,
+        parameters: Parameters<crate::tools::credit_note::ListCreditNotesArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.credit_note_service
+            .list_credit_notes(parameters, context)
+            .await
+    }
+
+    #[tool(description = "Get a specific credit note by its Lago ID")]
+    pub async fn get_credit_note(
+        &self,
+        parameters: Parameters<crate::tools::credit_note::GetCreditNoteArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.credit_note_service
+            .get_credit_note(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Create a credit note for an invoice. Credit notes are used to refund or credit customers for invoices. Specify the invoice ID, reason, amounts, and line items to credit."
+    )]
+    pub async fn create_credit_note(
+        &self,
+        parameters: Parameters<crate::tools::credit_note::CreateCreditNoteArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.credit_note_service
+            .create_credit_note(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Update a credit note's refund status. Use this to mark a refund as succeeded or failed."
+    )]
+    pub async fn update_credit_note(
+        &self,
+        parameters: Parameters<crate::tools::credit_note::UpdateCreditNoteArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.credit_note_service
+            .update_credit_note(parameters, context)
+            .await
+    }
 }
 
 #[tool_handler]
@@ -311,7 +365,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, billable metrics, coupons, applied coupons, activity logs, API logs, events, and other lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, billable metrics, coupons, applied coupons, credit notes, activity logs, API logs, events, and other lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
