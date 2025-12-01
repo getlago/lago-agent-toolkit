@@ -63,9 +63,43 @@ Once configured, you can ask Claude natural language questions about your billin
 
 ## Available Tools
 
+### Invoices
 - **`get_invoice`**: Retrieve a specific invoice by Lago ID
 - **`list_invoices`**: Search and filter invoices with advanced criteria
+- **`preview_invoice`**: Preview an invoice before creating it
 
+### Customers
+- **`get_customer`**: Retrieve a customer by external ID
+- **`list_customers`**: List customers with optional filtering
+- **`create_customer`**: Create or update a customer
+
+### Billable Metrics
+- **`get_billable_metric`**: Retrieve a billable metric by code
+- **`list_billable_metrics`**: List billable metrics with optional filtering
+- **`create_billable_metric`**: Create a new billable metric
+
+### Coupons
+- **`get_coupon`**: Retrieve a coupon by code
+- **`list_coupons`**: List all coupons
+- **`create_coupon`**: Create a new coupon
+- **`update_coupon`**: Update an existing coupon
+- **`delete_coupon`**: Delete a coupon
+
+### Applied Coupons
+- **`list_applied_coupons`**: List applied coupons with optional filtering
+- **`apply_coupon`**: Apply a coupon to a customer
+
+### Events
+- **`get_event`**: Retrieve a usage event by transaction ID
+- **`create_event`**: Send a usage event to Lago
+
+### Activity Logs
+- **`get_activity_log`**: Retrieve a specific activity log
+- **`list_activity_logs`**: List activity logs with optional filtering
+
+### API Logs
+- **`get_api_log`**: Retrieve a specific API log
+- **`list_api_logs`**: List API logs with optional filtering
 
 ## Contributing
 
