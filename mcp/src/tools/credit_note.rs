@@ -156,7 +156,7 @@ impl CreditNoteService {
             Ok(response) => {
                 let result = serde_json::json!({
                     "credit_notes": response.credit_notes,
-                    "meta": response.meta,
+                    "pagination": response.meta,
                 });
 
                 Ok(success_result(&result))
