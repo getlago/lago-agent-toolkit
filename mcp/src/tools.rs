@@ -4,6 +4,7 @@ pub mod applied_coupon;
 pub mod billable_metric;
 pub mod coupon;
 pub mod customer;
+pub mod event;
 pub mod invoice;
 
 use lago_client::{Config, Credentials, LagoClient, Region};

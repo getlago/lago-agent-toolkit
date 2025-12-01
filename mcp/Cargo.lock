@@ -915,9 +915,9 @@ dependencies = [
 
 [[package]]
 name = "lago-client"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7885331605d4b4d6a5d54a96bd0837142e9a2f17ef1f487c9174d166bc1973bd"
+checksum = "6236ab8de677d925c2e07d11b759cb12cd70c42a315f98841556fe4cef5371a2"
 dependencies = [
  "anyhow",
  "lago-types",
@@ -927,6 +927,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "url",
+ "urlencoding",
 ]
 
 [[package]]
@@ -954,9 +955,9 @@ dependencies = [
 
 [[package]]
 name = "lago-types"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e42400dc8d4ce52cfd52166c89b22a5b3be493595d3feab5e69cf00b2d6e632"
+checksum = "c2e1b24fa6676b6be36a809344f2746d6ea28872035680113fe1f1d1851e6082"
 dependencies = [
  "chrono",
  "reqwest",
@@ -2137,6 +2138,12 @@ dependencies = [
  "idna",
  "percent-encoding",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "utf8_iter"
