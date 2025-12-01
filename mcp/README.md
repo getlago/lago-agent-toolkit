@@ -16,6 +16,7 @@ The Model Context Protocol (MCP) is a standardized way for AI assistants to inte
 - **Activity Log Management**: Query activity logs to track actions performed on resources
 - **API Log Management**: Query API logs to monitor API requests and responses
 - **Applied Coupon Management**: Apply coupons to customers and list applied coupons
+- **Event Management**: Send and retrieve usage events for billing
 - **Filtering Support**: Filter invoices, customers, billable metrics, logs, and applied coupons by various criteria
 - **Pagination**: Handle large result sets with built-in pagination
 - **Type Safety**: Fully typed requests and responses using Rust
@@ -309,9 +310,57 @@ List API logs with optional filtering and pagination.
 }
 ```
 
+### Event Tools
+
+#### 13. `get_event`
+Retrieve a specific usage event by its transaction ID.
+
+**Parameters:**
+- `transaction_id` (string, required): The transaction ID of the event to retrieve (will be URL encoded automatically)
+
+**Example:**
+```json
+{
+  "transaction_id": "transaction_1234567890"
+}
+```
+
+#### 14. `create_event`
+Send a usage event to Lago. Events are used to track customer usage and are aggregated into invoice line items based on billable metrics.
+
+**Parameters:**
+- `transaction_id` (string, required): Unique identifier for this event (used for idempotency and retrieval)
+- `code` (string, required): Billable metric code
+- `external_customer_id` (string, optional): External customer ID - required if external_subscription_id is not provided
+- `external_subscription_id` (string, optional): External subscription ID - required if external_customer_id is not provided
+- `timestamp` (integer, optional): Event timestamp (Unix timestamp in seconds). If not provided, the current time is used.
+- `properties` (object, optional): Custom properties/metadata for the event (e.g., {"gb": 10, "region": "us-east"})
+- `precise_total_amount_cents` (integer, optional): Precise total amount in cents (e.g., 1234567 for $12,345.67)
+
+**Example (for customer):**
+```json
+{
+  "transaction_id": "txn_unique_123",
+  "external_customer_id": "customer_123",
+  "code": "api_calls",
+  "properties": {"calls": 150, "region": "us-east"},
+  "timestamp": 1705312200
+}
+```
+
+**Example (for subscription):**
+```json
+{
+  "transaction_id": "txn_unique_456",
+  "external_subscription_id": "sub_456",
+  "code": "storage_gb",
+  "properties": {"gb": 50.5}
+}
+```
+
 ### Applied Coupon Tools
 
-#### 13. `list_applied_coupons`
+#### 16. `list_applied_coupons`
 List applied coupons with optional filtering and pagination.
 
 **Parameters:**
@@ -333,7 +382,7 @@ List applied coupons with optional filtering and pagination.
 }
 ```
 
-#### 14. `apply_coupon`
+#### 17. `apply_coupon`
 Apply a coupon to a customer. Use this to give discounts before or during a subscription.
 
 **Parameters:**
@@ -696,6 +745,34 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+### Event Data
+```json
+{
+  "lago_id": "uuid",
+  "transaction_id": "transaction_1234567890",
+  "lago_customer_id": "uuid",
+  "code": "api_calls",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "lago_subscription_id": "uuid",
+  "external_subscription_id": "sub_123",
+  "created_at": "2024-01-15T10:30:00Z",
+  "precise_total_amount_cents": 123456,
+  "properties": {"calls": 150}
+}
+```
+
+**For created events (acknowledgment):**
+```json
+{
+  "event": {
+    "transaction_id": "transaction_1234567890",
+    "external_customer_id": "customer_123",
+    "external_subscription_id": null,
+    "code": "api_calls"
+  }
+}
+```
+
 ## Development
 
 ### Project Structure
@@ -709,7 +786,9 @@ mcp/
 │   │   ├── api_log.rs         # API log-related tools
 │   │   ├── applied_coupon.rs  # Applied coupon-related tools
 │   │   ├── billable_metric.rs # Billable metric-related tools
+│   │   ├── coupon.rs          # Coupon-related tools
 │   │   ├── customer.rs        # Customer-related tools
+│   │   ├── event.rs           # Event-related tools
 │   │   └── invoice.rs         # Invoice-related tools
 │   └── tools.rs         # Shared utilities and client creation
 ├── Cargo.toml           # Rust dependencies

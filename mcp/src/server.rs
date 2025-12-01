@@ -14,6 +14,7 @@ use crate::tools::applied_coupon::AppliedCouponService;
 use crate::tools::billable_metric::BillableMetricService;
 use crate::tools::coupon::CouponService;
 use crate::tools::customer::CustomerService;
+use crate::tools::event::EventService;
 use crate::tools::invoice::InvoiceService;
 
 #[derive(Clone)]
@@ -26,6 +27,7 @@ pub struct LagoMcpServer {
     api_log_service: ApiLogService,
     applied_coupon_service: AppliedCouponService,
     coupon_service: CouponService,
+    event_service: EventService,
     tool_router: ToolRouter<Self>,
 }
 
@@ -39,6 +41,7 @@ impl LagoMcpServer {
         let api_log_service = ApiLogService::new();
         let applied_coupon_service = AppliedCouponService::new();
         let coupon_service = CouponService::new();
+        let event_service = EventService::new();
 
         Self {
             invoice_service,
@@ -48,6 +51,7 @@ impl LagoMcpServer {
             api_log_service,
             applied_coupon_service,
             coupon_service,
+            event_service,
             tool_router: Self::tool_router(),
         }
     }
@@ -280,6 +284,26 @@ impl LagoMcpServer {
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.coupon_service.delete_coupon(parameters, context).await
     }
+
+    #[tool(description = "Retrieve a specific usage event by its transaction ID")]
+    pub async fn get_event(
+        &self,
+        parameters: Parameters<crate::tools::event::GetEventArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.event_service.get_event(parameters, context).await
+    }
+
+    #[tool(
+        description = "Send a usage event to Lago. Events are used to track customer usage and are aggregated into invoice line items based on billable metrics. Provide either external_customer_id or external_subscription_id."
+    )]
+    pub async fn create_event(
+        &self,
+        parameters: Parameters<crate::tools::event::CreateEventArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.event_service.create_event(parameters, context).await
+    }
 }
 
 #[tool_handler]
@@ -287,7 +311,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, billable metrics, coupons, applied coupons, activity logs, API logs and other lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, billable metrics, coupons, applied coupons, activity logs, API logs, events, and other lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
