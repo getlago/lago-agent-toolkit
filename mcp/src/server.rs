@@ -114,6 +114,97 @@ impl LagoMcpServer {
             .await
     }
 
+    #[tool(
+        description = "Create a one-off invoice for a customer with add-on charges. Use this to bill customers for one-time fees like setup charges, consulting hours, or any non-recurring charges."
+    )]
+    pub async fn create_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::CreateInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .create_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Update an existing invoice's payment status or metadata. Use this to mark invoices as paid, add tracking information, or update custom metadata fields."
+    )]
+    pub async fn update_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::UpdateInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .update_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "List all invoices for a specific customer. Returns paginated results with invoice details including amounts, status, and payment status."
+    )]
+    pub async fn list_customer_invoices(
+        &self,
+        parameters: Parameters<crate::tools::invoice::ListCustomerInvoicesArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .list_customer_invoices(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Refresh a draft invoice by re-fetching customer information and recomputing taxes. Only works on draft invoices that haven't been finalized yet."
+    )]
+    pub async fn refresh_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::RefreshInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .refresh_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Trigger PDF generation for an invoice and get the download URL. Use this when a customer needs a PDF copy of their invoice."
+    )]
+    pub async fn download_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::DownloadInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .download_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Retry the finalization process for an invoice that failed during generation. Only works on invoices with 'failed' status."
+    )]
+    pub async fn retry_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::RetryInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .retry_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Resend an invoice for collection and retry the payment with the payment provider. Use this when a payment has failed and you want to attempt collection again."
+    )]
+    pub async fn retry_invoice_payment(
+        &self,
+        parameters: Parameters<crate::tools::invoice::RetryInvoicePaymentArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .retry_invoice_payment(parameters, context)
+            .await
+    }
+
     #[tool(description = "Get a specific customer by their external ID")]
     pub async fn get_customer(
         &self,
@@ -532,9 +623,7 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::payment::GetPaymentArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        self.payment_service
-            .get_payment(parameters, context)
-            .await
+        self.payment_service.get_payment(parameters, context).await
     }
 
     #[tool(

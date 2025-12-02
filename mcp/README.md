@@ -70,9 +70,133 @@ List invoices with optional filtering and pagination.
 }
 ```
 
+#### 3. `create_invoice`
+Create a one-off invoice for a customer with add-on charges.
+
+**Parameters:**
+- `external_customer_id` (string, required): The external customer ID to create the invoice for
+- `currency` (string, required): The currency for the invoice (ISO 4217 code, e.g., "USD")
+- `fees` (array, required): The list of fees to include in the invoice
+  - `add_on_code` (string, required): The code of the add-on to charge
+  - `units` (number, required): The number of units to charge
+  - `unit_amount_cents` (integer, optional): Price per unit in cents (uses add-on default if not specified)
+  - `description` (string, optional): Description for the fee
+  - `tax_codes` (array of strings, optional): Tax codes to apply to this fee
+
+**Example:**
+```json
+{
+  "external_customer_id": "customer_123",
+  "currency": "USD",
+  "fees": [
+    {
+      "add_on_code": "setup_fee",
+      "units": 1,
+      "unit_amount_cents": 9900,
+      "description": "One-time setup fee"
+    }
+  ]
+}
+```
+
+#### 4. `update_invoice`
+Update an existing invoice's payment status or metadata.
+
+**Parameters:**
+- `lago_id` (string, required): The Lago ID (UUID) of the invoice to update
+- `payment_status` (string, optional): The payment status to set
+  - Possible values: `pending`, `succeeded`, `failed`
+- `metadata` (array, optional): Custom metadata entries to set on the invoice
+  - `id` (string, optional): ID of existing metadata entry to update (omit for new entries)
+  - `key` (string, required): The metadata key
+  - `value` (string, required): The metadata value
+
+**Example:**
+```json
+{
+  "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+  "payment_status": "succeeded",
+  "metadata": [
+    {
+      "key": "payment_reference",
+      "value": "REF-12345"
+    }
+  ]
+}
+```
+
+#### 5. `list_customer_invoices`
+List all invoices for a specific customer.
+
+**Parameters:**
+- `external_customer_id` (string, required): The external customer ID to list invoices for
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "external_customer_id": "customer_123",
+  "page": 1,
+  "per_page": 20
+}
+```
+
+#### 6. `refresh_invoice`
+Refresh a draft invoice by re-fetching customer information and recomputing taxes.
+
+**Parameters:**
+- `lago_id` (string, required): The Lago ID (UUID) of the draft invoice to refresh
+
+**Example:**
+```json
+{
+  "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+}
+```
+
+#### 7. `download_invoice`
+Trigger PDF generation for an invoice and get the download URL.
+
+**Parameters:**
+- `lago_id` (string, required): The Lago ID (UUID) of the invoice to download
+
+**Example:**
+```json
+{
+  "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+}
+```
+
+#### 8. `retry_invoice`
+Retry the finalization process for an invoice that failed during generation.
+
+**Parameters:**
+- `lago_id` (string, required): The Lago ID (UUID) of the failed invoice to retry
+
+**Example:**
+```json
+{
+  "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+}
+```
+
+#### 9. `retry_invoice_payment`
+Resend an invoice for collection and retry the payment with the payment provider.
+
+**Parameters:**
+- `lago_id` (string, required): The Lago ID (UUID) of the invoice to retry payment for
+
+**Example:**
+```json
+{
+  "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+}
+```
+
 ### Customer Tools
 
-#### 3. `get_customer`
+#### 10. `get_customer`
 Retrieve a specific customer by their external ID.
 
 **Parameters:**
@@ -85,7 +209,7 @@ Retrieve a specific customer by their external ID.
 }
 ```
 
-#### 4. `list_customers`
+#### 11. `list_customers`
 List customers with optional filtering and pagination.
 
 **Parameters:**
@@ -102,7 +226,7 @@ List customers with optional filtering and pagination.
 }
 ```
 
-#### 5. `create_customer`
+#### 12. `create_customer`
 Create or update a customer in Lago.
 
 **Parameters:**
@@ -150,7 +274,7 @@ Create or update a customer in Lago.
 
 ### Customer Usage Tools
 
-#### 6. `get_customer_current_usage`
+#### 13. `get_customer_current_usage`
 Get the current usage for a customer's subscription. This endpoint retrieves the usage-based billing data for a customer within the current billing period.
 
 **Parameters:**
@@ -177,7 +301,7 @@ Get the current usage for a customer's subscription. This endpoint retrieves the
 
 ### Billable Metric Tools
 
-#### 7. `get_billable_metric`
+#### 14. `get_billable_metric`
 Retrieve a specific billable metric by its code.
 
 **Parameters:**
@@ -190,7 +314,7 @@ Retrieve a specific billable metric by its code.
 }
 ```
 
-#### 8. `list_billable_metrics`
+#### 15. `list_billable_metrics`
 List billable metrics with optional filtering and pagination.
 
 **Parameters:**
@@ -210,7 +334,7 @@ List billable metrics with optional filtering and pagination.
 }
 ```
 
-#### 9. `create_billable_metric`
+#### 16. `create_billable_metric`
 Create a new billable metric in Lago.
 
 **Parameters:**
@@ -254,7 +378,7 @@ Create a new billable metric in Lago.
 
 ### Activity Log Tools
 
-#### 10. `get_activity_log`
+#### 17. `get_activity_log`
 Retrieve a specific activity log by its activity ID.
 
 **Parameters:**
@@ -267,7 +391,7 @@ Retrieve a specific activity log by its activity ID.
 }
 ```
 
-#### 11. `list_activity_logs`
+#### 18. `list_activity_logs`
 List activity logs with optional filtering and pagination.
 
 **Parameters:**
@@ -299,7 +423,7 @@ List activity logs with optional filtering and pagination.
 
 ### API Log Tools
 
-#### 12. `get_api_log`
+#### 19. `get_api_log`
 Retrieve a specific API log by its request ID.
 
 **Parameters:**
@@ -312,7 +436,7 @@ Retrieve a specific API log by its request ID.
 }
 ```
 
-#### 13. `list_api_logs`
+#### 20. `list_api_logs`
 List API logs with optional filtering and pagination.
 
 **Parameters:**
@@ -342,7 +466,7 @@ List API logs with optional filtering and pagination.
 
 ### Event Tools
 
-#### 14. `get_event`
+#### 21. `get_event`
 Retrieve a specific usage event by its transaction ID.
 
 **Parameters:**
@@ -355,7 +479,7 @@ Retrieve a specific usage event by its transaction ID.
 }
 ```
 
-#### 15. `create_event`
+#### 22. `create_event`
 Send a usage event to Lago. Events are used to track customer usage and are aggregated into invoice line items based on billable metrics.
 
 **Parameters:**
@@ -390,7 +514,7 @@ Send a usage event to Lago. Events are used to track customer usage and are aggr
 
 ### Applied Coupon Tools
 
-#### 17. `list_applied_coupons`
+#### 23. `list_applied_coupons`
 List applied coupons with optional filtering and pagination.
 
 **Parameters:**
@@ -412,7 +536,7 @@ List applied coupons with optional filtering and pagination.
 }
 ```
 
-#### 18. `apply_coupon`
+#### 24. `apply_coupon`
 Apply a coupon to a customer. Use this to give discounts before or during a subscription.
 
 **Parameters:**
@@ -437,7 +561,7 @@ Apply a coupon to a customer. Use this to give discounts before or during a subs
 
 ### Subscription Tools
 
-#### 19. `list_subscriptions`
+#### 25. `list_subscriptions`
 List subscriptions with optional filtering and pagination.
 
 **Parameters:**
@@ -457,7 +581,7 @@ List subscriptions with optional filtering and pagination.
 }
 ```
 
-#### 20. `get_subscription`
+#### 26. `get_subscription`
 Retrieve a specific subscription by its external ID.
 
 **Parameters:**
@@ -470,7 +594,7 @@ Retrieve a specific subscription by its external ID.
 }
 ```
 
-#### 21. `list_customer_subscriptions`
+#### 27. `list_customer_subscriptions`
 List subscriptions for a specific customer with optional filtering and pagination.
 
 **Parameters:**
@@ -491,7 +615,7 @@ List subscriptions for a specific customer with optional filtering and paginatio
 }
 ```
 
-#### 22. `create_subscription`
+#### 28. `create_subscription`
 Create a new subscription for a customer.
 
 **Parameters:**
@@ -527,7 +651,7 @@ Create a new subscription for a customer.
 }
 ```
 
-#### 23. `update_subscription`
+#### 29. `update_subscription`
 Update an existing subscription.
 
 **Parameters:**
@@ -547,7 +671,7 @@ Update an existing subscription.
 }
 ```
 
-#### 24. `delete_subscription`
+#### 30. `delete_subscription`
 Terminate a subscription.
 
 **Parameters:**
@@ -563,7 +687,7 @@ Terminate a subscription.
 
 ### Plan Tools
 
-#### 25. `list_plans`
+#### 31. `list_plans`
 List all plans with optional pagination.
 
 **Parameters:**
@@ -578,7 +702,7 @@ List all plans with optional pagination.
 }
 ```
 
-#### 26. `get_plan`
+#### 32. `get_plan`
 Retrieve a specific plan by its unique code.
 
 **Parameters:**
@@ -591,7 +715,7 @@ Retrieve a specific plan by its unique code.
 }
 ```
 
-#### 27. `create_plan`
+#### 33. `create_plan`
 Create a new plan in Lago. Plans define pricing configuration with billing interval, base amount, and optional usage-based charges.
 
 **Parameters:**
@@ -649,7 +773,7 @@ Create a new plan in Lago. Plans define pricing configuration with billing inter
 }
 ```
 
-#### 28. `update_plan`
+#### 34. `update_plan`
 Update an existing plan in Lago.
 
 **Parameters:**
@@ -681,7 +805,7 @@ Update an existing plan in Lago.
 }
 ```
 
-#### 29. `delete_plan`
+#### 35. `delete_plan`
 Delete a plan by its unique code. Note: This plan could be associated with active subscriptions.
 
 **Parameters:**

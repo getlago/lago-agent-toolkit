@@ -6,9 +6,12 @@ use lago_types::{
     filters::invoice::InvoiceFilters,
     models::{InvoicePaymentStatus, InvoiceStatus, InvoiceType, PaginationParams},
     requests::invoice::{
-        BillingTime, GetInvoiceRequest, InvoicePreviewCoupon, InvoicePreviewCustomer,
+        BillingTime, CreateInvoiceFeeInput, CreateInvoiceInput, CreateInvoiceRequest,
+        DownloadInvoiceRequest, GetInvoiceRequest, InvoicePreviewCoupon, InvoicePreviewCustomer,
         InvoicePreviewInput, InvoicePreviewRequest, InvoicePreviewSubscriptions,
-        ListInvoicesRequest,
+        ListCustomerInvoicesRequest, ListInvoicesRequest, RefreshInvoiceRequest,
+        RetryInvoicePaymentRequest, RetryInvoiceRequest, UpdateInvoiceInput,
+        UpdateInvoiceMetadataInput, UpdateInvoiceRequest,
     },
 };
 
@@ -66,6 +69,84 @@ pub struct PreviewInvoiceArgs {
     pub coupons: Option<Vec<PreviewInvoiceCouponArgs>>,
     pub subscriptions: Option<PreviewInvoiceSubscriptionsArgs>,
     pub billing_entity_code: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct CreateInvoiceFeeArgs {
+    /// The code of the add-on to charge.
+    pub add_on_code: String,
+    /// The number of units to charge.
+    pub units: f64,
+    /// The price per unit in cents (optional, uses add-on default if not specified).
+    pub unit_amount_cents: Option<i64>,
+    /// Optional description for the fee.
+    pub description: Option<String>,
+    /// Optional tax codes to apply to this fee.
+    pub tax_codes: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct CreateInvoiceArgs {
+    /// The external customer ID to create the invoice for.
+    pub external_customer_id: String,
+    /// The currency for the invoice (ISO 4217 code, e.g., "USD").
+    pub currency: String,
+    /// The list of fees to include in the invoice.
+    pub fees: Vec<CreateInvoiceFeeArgs>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct UpdateInvoiceMetadataArgs {
+    /// The ID of an existing metadata entry to update (optional for new entries).
+    pub id: Option<String>,
+    /// The metadata key.
+    pub key: String,
+    /// The metadata value.
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct UpdateInvoiceArgs {
+    /// The Lago ID (UUID) of the invoice to update.
+    pub lago_id: String,
+    /// The payment status to set (e.g., "pending", "succeeded", "failed").
+    pub payment_status: Option<String>,
+    /// Custom metadata entries to set on the invoice.
+    pub metadata: Option<Vec<UpdateInvoiceMetadataArgs>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct ListCustomerInvoicesArgs {
+    /// The external customer ID to list invoices for.
+    pub external_customer_id: String,
+    /// Page number for pagination.
+    pub page: Option<i32>,
+    /// Number of items per page.
+    pub per_page: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct RefreshInvoiceArgs {
+    /// The Lago ID (UUID) of the draft invoice to refresh.
+    pub lago_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct DownloadInvoiceArgs {
+    /// The Lago ID (UUID) of the invoice to download.
+    pub lago_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct RetryInvoiceArgs {
+    /// The Lago ID (UUID) of the failed invoice to retry.
+    pub lago_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct RetryInvoicePaymentArgs {
+    /// The Lago ID (UUID) of the invoice to retry payment for.
+    pub lago_id: String,
 }
 
 #[derive(Clone)]
@@ -310,6 +391,253 @@ impl InvoiceService {
             }
             Err(e) => {
                 let error_message = format!("Failed to preview invoice: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn create_invoice(
+        &self,
+        Parameters(args): Parameters<CreateInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let fees: Vec<CreateInvoiceFeeInput> = args
+            .fees
+            .into_iter()
+            .map(|f| {
+                let mut fee = CreateInvoiceFeeInput::new(f.add_on_code, f.units);
+                if let Some(amount) = f.unit_amount_cents {
+                    fee = fee.with_unit_amount_cents(amount);
+                }
+                if let Some(desc) = f.description {
+                    fee = fee.with_description(desc);
+                }
+                if let Some(taxes) = f.tax_codes {
+                    fee = fee.with_tax_codes(taxes);
+                }
+                fee
+            })
+            .collect();
+
+        let input = CreateInvoiceInput::new(args.external_customer_id, args.currency, fees);
+        let request = CreateInvoiceRequest::new(input);
+
+        match client.create_invoice(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoice": response.invoice,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to create invoice: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn update_invoice(
+        &self,
+        Parameters(args): Parameters<UpdateInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let mut input = UpdateInvoiceInput::new();
+
+        if let Some(status) = args.payment_status {
+            input = input.with_payment_status(status);
+        }
+
+        if let Some(metadata) = args.metadata {
+            let metadata_inputs: Vec<UpdateInvoiceMetadataInput> = metadata
+                .into_iter()
+                .map(|m| {
+                    if let Some(id) = m.id {
+                        UpdateInvoiceMetadataInput::with_id(id, m.key, m.value)
+                    } else {
+                        UpdateInvoiceMetadataInput::new(m.key, m.value)
+                    }
+                })
+                .collect();
+            input = input.with_metadata(metadata_inputs);
+        }
+
+        let request = UpdateInvoiceRequest::new(args.lago_id, input);
+
+        match client.update_invoice(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoice": response.invoice,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to update invoice: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn list_customer_invoices(
+        &self,
+        Parameters(args): Parameters<ListCustomerInvoicesArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let mut request = ListCustomerInvoicesRequest::new(args.external_customer_id);
+
+        if args.page.is_some() || args.per_page.is_some() {
+            let mut pagination = PaginationParams::default();
+            if let Some(page) = args.page {
+                pagination = pagination.with_page(page);
+            }
+            if let Some(per_page) = args.per_page {
+                pagination = pagination.with_per_page(per_page);
+            }
+            request = request.with_pagination(pagination);
+        }
+
+        match client.list_customer_invoices(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoices": response.invoices,
+                    "pagination": response.meta,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to list customer invoices: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn refresh_invoice(
+        &self,
+        Parameters(args): Parameters<RefreshInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let request = RefreshInvoiceRequest::new(args.lago_id);
+
+        match client.refresh_invoice(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoice": response.invoice,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to refresh invoice: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn download_invoice(
+        &self,
+        Parameters(args): Parameters<DownloadInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let request = DownloadInvoiceRequest::new(args.lago_id);
+
+        match client.download_invoice(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoice": response.invoice,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to download invoice: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn retry_invoice(
+        &self,
+        Parameters(args): Parameters<RetryInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let request = RetryInvoiceRequest::new(args.lago_id);
+
+        match client.retry_invoice(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoice": response.invoice,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to retry invoice: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn retry_invoice_payment(
+        &self,
+        Parameters(args): Parameters<RetryInvoicePaymentArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let request = RetryInvoicePaymentRequest::new(args.lago_id);
+
+        match client.retry_invoice_payment(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoice": response.invoice,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to retry invoice payment: {e}");
                 tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }

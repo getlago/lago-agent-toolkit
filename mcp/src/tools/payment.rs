@@ -174,8 +174,8 @@ impl PaymentService {
             pagination = pagination.with_per_page(per_page);
         }
 
-        let mut request = ListCustomerPaymentsRequest::new(args.external_customer_id)
-            .with_pagination(pagination);
+        let mut request =
+            ListCustomerPaymentsRequest::new(args.external_customer_id).with_pagination(pagination);
 
         if let Some(invoice_id_str) = args.invoice_id {
             match Uuid::parse_str(&invoice_id_str) {
@@ -218,8 +218,7 @@ impl PaymentService {
             Err(error_result) => return Ok(error_result),
         };
 
-        let mut input =
-            CreatePaymentInput::new(args.invoice_id, args.amount_cents, args.reference);
+        let mut input = CreatePaymentInput::new(args.invoice_id, args.amount_cents, args.reference);
 
         if let Some(paid_at) = args.paid_at {
             input = input.with_paid_at(paid_at);
