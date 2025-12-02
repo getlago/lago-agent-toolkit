@@ -15,14 +15,19 @@ use crate::tools::billable_metric::BillableMetricService;
 use crate::tools::coupon::CouponService;
 use crate::tools::credit_note::CreditNoteService;
 use crate::tools::customer::CustomerService;
+use crate::tools::customer_usage::CustomerUsageService;
 use crate::tools::event::EventService;
 use crate::tools::invoice::InvoiceService;
+use crate::tools::plan::PlanService;
+use crate::tools::subscription::SubscriptionService;
 
 #[derive(Clone)]
 #[allow(dead_code)]
 pub struct LagoMcpServer {
     invoice_service: InvoiceService,
     customer_service: CustomerService,
+    customer_usage_service: CustomerUsageService,
+    subscription_service: SubscriptionService,
     billable_metric_service: BillableMetricService,
     activity_log_service: ActivityLogService,
     api_log_service: ApiLogService,
@@ -30,6 +35,7 @@ pub struct LagoMcpServer {
     coupon_service: CouponService,
     credit_note_service: CreditNoteService,
     event_service: EventService,
+    plan_service: PlanService,
     tool_router: ToolRouter<Self>,
 }
 
@@ -38,6 +44,8 @@ impl LagoMcpServer {
     pub fn new() -> Self {
         let invoice_service = InvoiceService::new();
         let customer_service = CustomerService::new();
+        let customer_usage_service = CustomerUsageService::new();
+        let subscription_service = SubscriptionService::new();
         let billable_metric_service = BillableMetricService::new();
         let activity_log_service = ActivityLogService::new();
         let api_log_service = ApiLogService::new();
@@ -45,10 +53,13 @@ impl LagoMcpServer {
         let coupon_service = CouponService::new();
         let credit_note_service = CreditNoteService::new();
         let event_service = EventService::new();
+        let plan_service = PlanService::new();
 
         Self {
             invoice_service,
             customer_service,
+            customer_usage_service,
+            subscription_service,
             billable_metric_service,
             activity_log_service,
             api_log_service,
@@ -56,6 +67,7 @@ impl LagoMcpServer {
             coupon_service,
             credit_note_service,
             event_service,
+            plan_service,
             tool_router: Self::tool_router(),
         }
     }
@@ -130,6 +142,93 @@ impl LagoMcpServer {
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.customer_service
             .create_customer(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Get the current usage for a customer's subscription. This endpoint retrieves the usage-based billing data for a customer within the current billing period."
+    )]
+    pub async fn get_customer_current_usage(
+        &self,
+        parameters: Parameters<crate::tools::customer_usage::GetCustomerCurrentUsageArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.customer_usage_service
+            .get_customer_current_usage(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "List all subscriptions from Lago with optional filtering by plan code and status"
+    )]
+    pub async fn list_subscriptions(
+        &self,
+        parameters: Parameters<crate::tools::subscription::ListSubscriptionsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.subscription_service
+            .list_subscriptions(parameters, context)
+            .await
+    }
+
+    #[tool(description = "Get a specific subscription by its external ID")]
+    pub async fn get_subscription(
+        &self,
+        parameters: Parameters<crate::tools::subscription::GetSubscriptionArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.subscription_service
+            .get_subscription(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "List all subscriptions for a specific customer with optional filtering by plan code and status"
+    )]
+    pub async fn list_customer_subscriptions(
+        &self,
+        parameters: Parameters<crate::tools::subscription::ListCustomerSubscriptionsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.subscription_service
+            .list_customer_subscriptions(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Create a new subscription to assign a plan to a customer. You can customize the plan with overrides."
+    )]
+    pub async fn create_subscription(
+        &self,
+        parameters: Parameters<crate::tools::subscription::CreateSubscriptionArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.subscription_service
+            .create_subscription(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Update an existing subscription. You can change the name, ending date, plan, or apply plan overrides."
+    )]
+    pub async fn update_subscription(
+        &self,
+        parameters: Parameters<crate::tools::subscription::UpdateSubscriptionArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.subscription_service
+            .update_subscription(parameters, context)
+            .await
+    }
+
+    #[tool(description = "Delete (terminate) a subscription by its external ID")]
+    pub async fn delete_subscription(
+        &self,
+        parameters: Parameters<crate::tools::subscription::DeleteSubscriptionArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.subscription_service
+            .delete_subscription(parameters, context)
             .await
     }
 
@@ -358,6 +457,57 @@ impl LagoMcpServer {
             .update_credit_note(parameters, context)
             .await
     }
+
+    #[tool(description = "List all plans from Lago with optional pagination")]
+    pub async fn list_plans(
+        &self,
+        parameters: Parameters<crate::tools::plan::ListPlansArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.plan_service.list_plans(parameters, context).await
+    }
+
+    #[tool(description = "Get a specific plan by its unique code")]
+    pub async fn get_plan(
+        &self,
+        parameters: Parameters<crate::tools::plan::GetPlanArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.plan_service.get_plan(parameters, context).await
+    }
+
+    #[tool(
+        description = "Create a new plan in Lago. Plans define pricing configuration with billing interval, base amount, and optional usage-based charges."
+    )]
+    pub async fn create_plan(
+        &self,
+        parameters: Parameters<crate::tools::plan::CreatePlanArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.plan_service.create_plan(parameters, context).await
+    }
+
+    #[tool(
+        description = "Update an existing plan in Lago. You can modify the name, description, pricing, charges, and other properties. Use cascade_updates to propagate changes to existing subscriptions."
+    )]
+    pub async fn update_plan(
+        &self,
+        parameters: Parameters<crate::tools::plan::UpdatePlanArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.plan_service.update_plan(parameters, context).await
+    }
+
+    #[tool(
+        description = "Delete a plan by its unique code. Note: This plan could be associated with active subscriptions."
+    )]
+    pub async fn delete_plan(
+        &self,
+        parameters: Parameters<crate::tools::plan::DeletePlanArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.plan_service.delete_plan(parameters, context).await
+    }
 }
 
 #[tool_handler]
@@ -365,7 +515,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, billable metrics, coupons, applied coupons, credit notes, activity logs, API logs, events, and other lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, activity logs, API logs, events, and other Lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
