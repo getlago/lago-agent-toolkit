@@ -18,6 +18,7 @@ use crate::tools::customer::CustomerService;
 use crate::tools::customer_usage::CustomerUsageService;
 use crate::tools::event::EventService;
 use crate::tools::invoice::InvoiceService;
+use crate::tools::payment::PaymentService;
 use crate::tools::plan::PlanService;
 use crate::tools::subscription::SubscriptionService;
 
@@ -35,6 +36,7 @@ pub struct LagoMcpServer {
     coupon_service: CouponService,
     credit_note_service: CreditNoteService,
     event_service: EventService,
+    payment_service: PaymentService,
     plan_service: PlanService,
     tool_router: ToolRouter<Self>,
 }
@@ -53,6 +55,7 @@ impl LagoMcpServer {
         let coupon_service = CouponService::new();
         let credit_note_service = CreditNoteService::new();
         let event_service = EventService::new();
+        let payment_service = PaymentService::new();
         let plan_service = PlanService::new();
 
         Self {
@@ -67,6 +70,7 @@ impl LagoMcpServer {
             coupon_service,
             credit_note_service,
             event_service,
+            payment_service,
             plan_service,
             tool_router: Self::tool_router(),
         }
@@ -508,6 +512,56 @@ impl LagoMcpServer {
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.plan_service.delete_plan(parameters, context).await
     }
+
+    #[tool(
+        description = "List all payments with optional filtering by customer, invoice, and pagination"
+    )]
+    pub async fn list_payments(
+        &self,
+        parameters: Parameters<crate::tools::payment::ListPaymentsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.payment_service
+            .list_payments(parameters, context)
+            .await
+    }
+
+    #[tool(description = "Get a specific payment by its Lago ID")]
+    pub async fn get_payment(
+        &self,
+        parameters: Parameters<crate::tools::payment::GetPaymentArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.payment_service
+            .get_payment(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "List all payments for a specific customer with optional filtering by invoice"
+    )]
+    pub async fn list_customer_payments(
+        &self,
+        parameters: Parameters<crate::tools::payment::ListCustomerPaymentsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.payment_service
+            .list_customer_payments(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Create a manual payment for an invoice. Use this to record payments made outside of Lago's payment providers."
+    )]
+    pub async fn create_payment(
+        &self,
+        parameters: Parameters<crate::tools::payment::CreatePaymentArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.payment_service
+            .create_payment(parameters, context)
+            .await
+    }
 }
 
 #[tool_handler]
@@ -515,7 +569,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, activity logs, API logs, events, and other Lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, payments, activity logs, API logs, events, and other Lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()

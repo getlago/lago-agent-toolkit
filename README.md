@@ -99,6 +99,12 @@ Once configured, you can ask Claude natural language questions about your billin
 - **`create_credit_note`**: Create a credit note for an invoice
 - **`update_credit_note`**: Update a credit note's refund status
 
+### Payments
+- **`get_payment`**: Retrieve a specific payment by Lago ID
+- **`list_payments`**: List all payments with optional filtering by customer and invoice
+- **`list_customer_payments`**: List all payments for a specific customer
+- **`create_payment`**: Create a manual payment for an invoice
+
 ### Activity Logs
 - **`get_activity_log`**: Retrieve a specific activity log
 - **`list_activity_logs`**: List activity logs with optional filtering
