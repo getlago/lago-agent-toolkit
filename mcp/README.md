@@ -12,12 +12,15 @@ The Model Context Protocol (MCP) is a standardized way for AI assistants to inte
 
 - **Invoice Management**: Query and retrieve invoice data from Lago
 - **Customer Management**: Create, retrieve, and list customers in Lago
+- **Customer Usage**: Retrieve current usage data for a customer's subscription
+- **Subscription Management**: Create, update, list, and delete subscriptions in Lago
+- **Plan Management**: Create, update, list, and delete plans in Lago
 - **Billable Metric Management**: Create, retrieve, and list billable metrics in Lago
 - **Activity Log Management**: Query activity logs to track actions performed on resources
 - **API Log Management**: Query API logs to monitor API requests and responses
 - **Applied Coupon Management**: Apply coupons to customers and list applied coupons
 - **Event Management**: Send and retrieve usage events for billing
-- **Filtering Support**: Filter invoices, customers, billable metrics, logs, and applied coupons by various criteria
+- **Filtering Support**: Filter invoices, customers, subscriptions, plans, billable metrics, logs, and applied coupons by various criteria
 - **Pagination**: Handle large result sets with built-in pagination
 - **Type Safety**: Fully typed requests and responses using Rust
 - **Multi-tenant Support**: Per-request client creation for handling multiple tenants
@@ -145,9 +148,36 @@ Create or update a customer in Lago.
 }
 ```
 
+### Customer Usage Tools
+
+#### 6. `get_customer_current_usage`
+Get the current usage for a customer's subscription. This endpoint retrieves the usage-based billing data for a customer within the current billing period.
+
+**Parameters:**
+- `external_customer_id` (string, required): The external unique identifier of the customer (provided by your own application)
+- `external_subscription_id` (string, required): The unique identifier of the subscription within your application
+- `apply_taxes` (boolean, optional): Optional flag to determine if taxes should be applied. Defaults to true if not provided.
+
+**Example:**
+```json
+{
+  "external_customer_id": "customer_123",
+  "external_subscription_id": "subscription_456"
+}
+```
+
+**Example with taxes disabled:**
+```json
+{
+  "external_customer_id": "customer_123",
+  "external_subscription_id": "subscription_456",
+  "apply_taxes": false
+}
+```
+
 ### Billable Metric Tools
 
-#### 6. `get_billable_metric`
+#### 7. `get_billable_metric`
 Retrieve a specific billable metric by its code.
 
 **Parameters:**
@@ -160,7 +190,7 @@ Retrieve a specific billable metric by its code.
 }
 ```
 
-#### 7. `list_billable_metrics`
+#### 8. `list_billable_metrics`
 List billable metrics with optional filtering and pagination.
 
 **Parameters:**
@@ -180,7 +210,7 @@ List billable metrics with optional filtering and pagination.
 }
 ```
 
-#### 8. `create_billable_metric`
+#### 9. `create_billable_metric`
 Create a new billable metric in Lago.
 
 **Parameters:**
@@ -224,7 +254,7 @@ Create a new billable metric in Lago.
 
 ### Activity Log Tools
 
-#### 9. `get_activity_log`
+#### 10. `get_activity_log`
 Retrieve a specific activity log by its activity ID.
 
 **Parameters:**
@@ -237,7 +267,7 @@ Retrieve a specific activity log by its activity ID.
 }
 ```
 
-#### 10. `list_activity_logs`
+#### 11. `list_activity_logs`
 List activity logs with optional filtering and pagination.
 
 **Parameters:**
@@ -269,7 +299,7 @@ List activity logs with optional filtering and pagination.
 
 ### API Log Tools
 
-#### 11. `get_api_log`
+#### 12. `get_api_log`
 Retrieve a specific API log by its request ID.
 
 **Parameters:**
@@ -282,7 +312,7 @@ Retrieve a specific API log by its request ID.
 }
 ```
 
-#### 12. `list_api_logs`
+#### 13. `list_api_logs`
 List API logs with optional filtering and pagination.
 
 **Parameters:**
@@ -312,7 +342,7 @@ List API logs with optional filtering and pagination.
 
 ### Event Tools
 
-#### 13. `get_event`
+#### 14. `get_event`
 Retrieve a specific usage event by its transaction ID.
 
 **Parameters:**
@@ -325,7 +355,7 @@ Retrieve a specific usage event by its transaction ID.
 }
 ```
 
-#### 14. `create_event`
+#### 15. `create_event`
 Send a usage event to Lago. Events are used to track customer usage and are aggregated into invoice line items based on billable metrics.
 
 **Parameters:**
@@ -360,7 +390,7 @@ Send a usage event to Lago. Events are used to track customer usage and are aggr
 
 ### Applied Coupon Tools
 
-#### 16. `list_applied_coupons`
+#### 17. `list_applied_coupons`
 List applied coupons with optional filtering and pagination.
 
 **Parameters:**
@@ -382,7 +412,7 @@ List applied coupons with optional filtering and pagination.
 }
 ```
 
-#### 17. `apply_coupon`
+#### 18. `apply_coupon`
 Apply a coupon to a customer. Use this to give discounts before or during a subscription.
 
 **Parameters:**
@@ -402,6 +432,265 @@ Apply a coupon to a customer. Use this to give discounts before or during a subs
   "coupon_code": "WELCOME10",
   "frequency": "recurring",
   "frequency_duration": 6
+}
+```
+
+### Subscription Tools
+
+#### 19. `list_subscriptions`
+List subscriptions with optional filtering and pagination.
+
+**Parameters:**
+- `plan_code` (string, optional): Filter by plan code
+- `status` (array of strings, optional): Filter by subscription status
+  - Possible values: `active`, `pending`, `canceled`, `terminated`
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "plan_code": "starter_plan",
+  "status": ["active", "pending"],
+  "page": 1,
+  "per_page": 10
+}
+```
+
+#### 20. `get_subscription`
+Retrieve a specific subscription by its external ID.
+
+**Parameters:**
+- `external_id` (string, required): The external unique identifier of the subscription
+
+**Example:**
+```json
+{
+  "external_id": "sub_123"
+}
+```
+
+#### 21. `list_customer_subscriptions`
+List subscriptions for a specific customer with optional filtering and pagination.
+
+**Parameters:**
+- `external_customer_id` (string, required): The external unique identifier of the customer
+- `plan_code` (string, optional): Filter by plan code
+- `status` (array of strings, optional): Filter by subscription status
+  - Possible values: `active`, `pending`, `canceled`, `terminated`
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "external_customer_id": "customer_123",
+  "status": ["active"],
+  "page": 1,
+  "per_page": 10
+}
+```
+
+#### 22. `create_subscription`
+Create a new subscription for a customer.
+
+**Parameters:**
+- `external_customer_id` (string, required): External unique identifier for the customer
+- `plan_code` (string, required): Code of the plan to assign to the subscription
+- `name` (string, optional): Optional display name for the subscription
+- `external_id` (string, optional): Optional external unique identifier for the subscription
+- `billing_time` (string, optional): Billing time determines when recurring billing cycles occur
+  - Possible values: `anniversary`, `calendar`
+- `subscription_at` (string, optional): The subscription start date (ISO 8601 format)
+- `ending_at` (string, optional): The subscription end date (ISO 8601 format)
+- `plan_overrides` (object, optional): Plan overrides to customize the plan for this subscription
+  - `amount_cents` (integer, optional): Override the base amount in cents
+  - `amount_currency` (string, optional): Override the currency
+  - `description` (string, optional): Override the plan description
+  - `invoice_display_name` (string, optional): Override the invoice display name
+  - `name` (string, optional): Override the plan name
+  - `trial_period` (number, optional): Override the trial period in days
+
+**Example:**
+```json
+{
+  "external_customer_id": "customer_123",
+  "plan_code": "starter_plan",
+  "name": "My Subscription",
+  "external_id": "sub_001",
+  "billing_time": "calendar",
+  "subscription_at": "2025-01-01T00:00:00Z",
+  "plan_overrides": {
+    "amount_cents": 9900,
+    "trial_period": 14
+  }
+}
+```
+
+#### 23. `update_subscription`
+Update an existing subscription.
+
+**Parameters:**
+- `external_id` (string, required): The external unique identifier of the subscription to update
+- `name` (string, optional): Optional new name for the subscription
+- `ending_at` (string, optional): Optional new end date for the subscription (ISO 8601 format)
+- `plan_code` (string, optional): Optional new plan code (for plan changes)
+- `subscription_at` (string, optional): Optional new subscription date (ISO 8601 format)
+- `plan_overrides` (object, optional): Plan overrides to customize the plan for this subscription
+
+**Example:**
+```json
+{
+  "external_id": "sub_001",
+  "name": "Updated Subscription Name",
+  "ending_at": "2025-12-31T23:59:59Z"
+}
+```
+
+#### 24. `delete_subscription`
+Terminate a subscription.
+
+**Parameters:**
+- `external_id` (string, required): The external unique identifier of the subscription to terminate
+- `status` (string, optional): Optional status to set the subscription to (defaults to terminated)
+
+**Example:**
+```json
+{
+  "external_id": "sub_001"
+}
+```
+
+### Plan Tools
+
+#### 25. `list_plans`
+List all plans with optional pagination.
+
+**Parameters:**
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "page": 1,
+  "per_page": 10
+}
+```
+
+#### 26. `get_plan`
+Retrieve a specific plan by its unique code.
+
+**Parameters:**
+- `code` (string, required): The unique code of the plan
+
+**Example:**
+```json
+{
+  "code": "starter_plan"
+}
+```
+
+#### 27. `create_plan`
+Create a new plan in Lago. Plans define pricing configuration with billing interval, base amount, and optional usage-based charges.
+
+**Parameters:**
+- `name` (string, required): Name of the plan
+- `code` (string, required): Unique code for the plan
+- `interval` (string, required): Billing interval
+  - Possible values: `weekly`, `monthly`, `quarterly`, `semiannual`, `yearly`
+- `amount_cents` (integer, required): Base amount in cents
+- `amount_currency` (string, required): Currency for the amount (e.g., USD, EUR)
+- `invoice_display_name` (string, optional): Display name for invoices
+- `description` (string, optional): Description of the plan
+- `trial_period` (number, optional): Trial period in days
+- `pay_in_advance` (boolean, optional): Whether the plan is billed in advance
+- `bill_charges_monthly` (boolean, optional): Whether charges are billed monthly for yearly plans
+- `tax_codes` (array, optional): Tax codes for this plan
+- `charges` (array, optional): Usage-based charges for this plan
+  - Each charge has: `billable_metric_id`, `charge_model` (standard, graduated, volume, package, percentage), `properties`, etc.
+- `minimum_commitment` (object, optional): Minimum commitment configuration
+  - `amount_cents` (integer): Minimum commitment amount
+  - `invoice_display_name` (string, optional): Display name
+  - `tax_codes` (array, optional): Tax codes
+- `usage_thresholds` (array, optional): Usage thresholds for progressive billing
+  - Each threshold has: `amount_cents`, `threshold_display_name`, `recurring`
+
+**Example:**
+```json
+{
+  "name": "Starter Plan",
+  "code": "starter_plan",
+  "interval": "monthly",
+  "amount_cents": 9900,
+  "amount_currency": "USD",
+  "description": "Our starter plan for small teams",
+  "pay_in_advance": true,
+  "trial_period": 14
+}
+```
+
+**Example with charges:**
+```json
+{
+  "name": "Usage Plan",
+  "code": "usage_plan",
+  "interval": "monthly",
+  "amount_cents": 4900,
+  "amount_currency": "USD",
+  "charges": [
+    {
+      "billable_metric_id": "metric_lago_id",
+      "charge_model": "standard",
+      "invoiceable": true,
+      "properties": {"amount": "0.01"}
+    }
+  ]
+}
+```
+
+#### 28. `update_plan`
+Update an existing plan in Lago.
+
+**Parameters:**
+- `code` (string, required): The code of the plan to update
+- `name` (string, optional): New name of the plan
+- `new_code` (string, optional): New code for the plan
+- `interval` (string, optional): Billing interval
+- `amount_cents` (integer, optional): Base amount in cents
+- `amount_currency` (string, optional): Currency for the amount
+- `invoice_display_name` (string, optional): Display name for invoices
+- `description` (string, optional): Description of the plan
+- `trial_period` (number, optional): Trial period in days
+- `pay_in_advance` (boolean, optional): Whether the plan is billed in advance
+- `bill_charges_monthly` (boolean, optional): Whether charges are billed monthly
+- `tax_codes` (array, optional): Tax codes for this plan
+- `charges` (array, optional): Charges for this plan
+- `minimum_commitment` (object, optional): Minimum commitment configuration
+- `usage_thresholds` (array, optional): Usage thresholds
+- `cascade_updates` (boolean, optional): Whether to cascade updates to existing subscriptions
+
+**Example:**
+```json
+{
+  "code": "starter_plan",
+  "name": "Updated Starter Plan",
+  "amount_cents": 12900,
+  "description": "Updated description",
+  "cascade_updates": true
+}
+```
+
+#### 29. `delete_plan`
+Delete a plan by its unique code. Note: This plan could be associated with active subscriptions.
+
+**Parameters:**
+- `code` (string, required): The code of the plan to delete
+
+**Example:**
+```json
+{
+  "code": "starter_plan"
 }
 ```
 
@@ -562,12 +851,49 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+### Customer Usage Data
+```json
+{
+  "customer_usage": {
+    "from_datetime": "2024-01-01T00:00:00Z",
+    "to_datetime": "2024-01-31T23:59:59Z",
+    "issuing_date": "2024-02-01",
+    "lago_invoice_id": null,
+    "currency": "USD",
+    "amount_cents": 15000,
+    "taxes_amount_cents": 1500,
+    "total_amount_cents": 16500,
+    "charges_usage": [
+      {
+        "units": "150.0",
+        "events_count": 45,
+        "amount_cents": 15000,
+        "amount_currency": "USD",
+        "charge": {
+          "lago_id": "uuid",
+          "charge_model": "standard",
+          "invoice_display_name": "API Calls"
+        },
+        "billable_metric": {
+          "lago_id": "uuid",
+          "name": "API Calls",
+          "code": "api_calls",
+          "aggregation_type": "count_agg"
+        },
+        "filters": [],
+        "grouped_usage": []
+      }
+    ]
+  }
+}
+```
+
 ### Billable Metric Data
 ```json
 {
   "lago_id": "uuid",
   "name": "Storage Usage",
-  "code": "storage_gb", 
+  "code": "storage_gb",
   "description": "Tracks storage usage in gigabytes",
   "aggregation_type": "sum_agg",
   "recurring": false,
@@ -773,6 +1099,111 @@ All tools return JSON responses with the following structure:
 }
 ```
 
+### Subscription Data
+```json
+{
+  "subscription": {
+    "lago_id": "uuid",
+    "external_id": "sub_001",
+    "lago_customer_id": "uuid",
+    "external_customer_id": "customer_123",
+    "billing_time": "calendar",
+    "name": "My Subscription",
+    "plan_code": "starter_plan",
+    "status": "active",
+    "created_at": "2024-01-15T10:30:00Z",
+    "canceled_at": null,
+    "started_at": "2024-01-15T10:30:00Z",
+    "ending_at": null,
+    "subscription_at": "2024-01-15T10:30:00Z",
+    "terminated_at": null,
+    "previous_plan_code": null,
+    "next_plan_code": null,
+    "downgrade_plan_date": null,
+    "trial_ended_at": null,
+    "current_billing_period_started_at": "2024-01-01T00:00:00Z",
+    "current_billing_period_ending_at": "2024-01-31T23:59:59Z",
+    "plan": {
+      "lago_id": "uuid",
+      "name": "Starter Plan",
+      "invoice_display_name": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "code": "starter_plan",
+      "interval": "monthly",
+      "description": null,
+      "amount_cents": 9900,
+      "amount_currency": "USD",
+      "trial_period": 0.0,
+      "pay_in_advance": true,
+      "bill_charges_monthly": null,
+      "active_subscriptions_count": 10,
+      "draft_invoices_count": 0,
+      "parent_id": null,
+      "taxes": []
+    }
+  }
+}
+```
+
+**For subscription lists:**
+```json
+{
+  "subscriptions": [
+    // Array of subscription objects
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 5,
+    "total_count": 100,
+    "next_page": 2,
+    "prev_page": null
+  }
+}
+```
+
+### Plan Data
+```json
+{
+  "plan": {
+    "lago_id": "uuid",
+    "name": "Starter Plan",
+    "invoice_display_name": null,
+    "created_at": "2024-01-01T00:00:00Z",
+    "code": "starter_plan",
+    "interval": "monthly",
+    "description": "Our starter plan for small teams",
+    "amount_cents": 9900,
+    "amount_currency": "USD",
+    "trial_period": 14.0,
+    "pay_in_advance": true,
+    "bill_charges_monthly": null,
+    "active_subscriptions_count": 10,
+    "draft_invoices_count": 0,
+    "parent_id": null,
+    "charges": [],
+    "taxes": [],
+    "minimum_commitment": null,
+    "usage_thresholds": []
+  }
+}
+```
+
+**For plan lists:**
+```json
+{
+  "plans": [
+    // Array of plan objects
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 3,
+    "total_count": 25,
+    "next_page": 2,
+    "prev_page": null
+  }
+}
+```
+
 ## Development
 
 ### Project Structure
@@ -788,8 +1219,11 @@ mcp/
 │   │   ├── billable_metric.rs # Billable metric-related tools
 │   │   ├── coupon.rs          # Coupon-related tools
 │   │   ├── customer.rs        # Customer-related tools
+│   │   ├── customer_usage.rs  # Customer usage-related tools
 │   │   ├── event.rs           # Event-related tools
-│   │   └── invoice.rs         # Invoice-related tools
+│   │   ├── invoice.rs         # Invoice-related tools
+│   │   ├── plan.rs            # Plan-related tools
+│   │   └── subscription.rs    # Subscription-related tools
 │   └── tools.rs         # Shared utilities and client creation
 ├── Cargo.toml           # Rust dependencies
 └── Dockerfile           # Docker configuration
