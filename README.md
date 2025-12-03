@@ -66,7 +66,14 @@ Once configured, you can ask Claude natural language questions about your billin
 ### Invoices
 - **`get_invoice`**: Retrieve a specific invoice by Lago ID
 - **`list_invoices`**: Search and filter invoices with advanced criteria
+- **`list_customer_invoices`**: List all invoices for a specific customer
+- **`create_invoice`**: Create a one-off invoice with add-on fees
+- **`update_invoice`**: Update an invoice's payment status or metadata
 - **`preview_invoice`**: Preview an invoice before creating it
+- **`refresh_invoice`**: Refresh a draft invoice to recalculate charges
+- **`download_invoice`**: Download an invoice PDF
+- **`retry_invoice`**: Retry generation of a failed invoice
+- **`retry_invoice_payment`**: Retry payment collection for an invoice
 
 ### Customers
 - **`get_customer`**: Retrieve a customer by external ID
@@ -98,6 +105,12 @@ Once configured, you can ask Claude natural language questions about your billin
 - **`list_credit_notes`**: List credit notes with optional filtering
 - **`create_credit_note`**: Create a credit note for an invoice
 - **`update_credit_note`**: Update a credit note's refund status
+
+### Payments
+- **`get_payment`**: Retrieve a specific payment by Lago ID
+- **`list_payments`**: List all payments with optional filtering by customer and invoice
+- **`list_customer_payments`**: List all payments for a specific customer
+- **`create_payment`**: Create a manual payment for an invoice
 
 ### Activity Logs
 - **`get_activity_log`**: Retrieve a specific activity log

@@ -18,6 +18,7 @@ use crate::tools::customer::CustomerService;
 use crate::tools::customer_usage::CustomerUsageService;
 use crate::tools::event::EventService;
 use crate::tools::invoice::InvoiceService;
+use crate::tools::payment::PaymentService;
 use crate::tools::plan::PlanService;
 use crate::tools::subscription::SubscriptionService;
 
@@ -35,6 +36,7 @@ pub struct LagoMcpServer {
     coupon_service: CouponService,
     credit_note_service: CreditNoteService,
     event_service: EventService,
+    payment_service: PaymentService,
     plan_service: PlanService,
     tool_router: ToolRouter<Self>,
 }
@@ -53,6 +55,7 @@ impl LagoMcpServer {
         let coupon_service = CouponService::new();
         let credit_note_service = CreditNoteService::new();
         let event_service = EventService::new();
+        let payment_service = PaymentService::new();
         let plan_service = PlanService::new();
 
         Self {
@@ -67,6 +70,7 @@ impl LagoMcpServer {
             coupon_service,
             credit_note_service,
             event_service,
+            payment_service,
             plan_service,
             tool_router: Self::tool_router(),
         }
@@ -107,6 +111,97 @@ impl LagoMcpServer {
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.invoice_service
             .preview_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Create a one-off invoice for a customer with add-on charges. Use this to bill customers for one-time fees like setup charges, consulting hours, or any non-recurring charges."
+    )]
+    pub async fn create_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::CreateInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .create_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Update an existing invoice's payment status or metadata. Use this to mark invoices as paid, add tracking information, or update custom metadata fields."
+    )]
+    pub async fn update_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::UpdateInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .update_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "List all invoices for a specific customer. Returns paginated results with invoice details including amounts, status, and payment status."
+    )]
+    pub async fn list_customer_invoices(
+        &self,
+        parameters: Parameters<crate::tools::invoice::ListCustomerInvoicesArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .list_customer_invoices(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Refresh a draft invoice by re-fetching customer information and recomputing taxes. Only works on draft invoices that haven't been finalized yet."
+    )]
+    pub async fn refresh_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::RefreshInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .refresh_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Trigger PDF generation for an invoice and get the download URL. Use this when a customer needs a PDF copy of their invoice."
+    )]
+    pub async fn download_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::DownloadInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .download_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Retry the finalization process for an invoice that failed during generation. Only works on invoices with 'failed' status."
+    )]
+    pub async fn retry_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::RetryInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .retry_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Resend an invoice for collection and retry the payment with the payment provider. Use this when a payment has failed and you want to attempt collection again."
+    )]
+    pub async fn retry_invoice_payment(
+        &self,
+        parameters: Parameters<crate::tools::invoice::RetryInvoicePaymentArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .retry_invoice_payment(parameters, context)
             .await
     }
 
@@ -508,6 +603,54 @@ impl LagoMcpServer {
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.plan_service.delete_plan(parameters, context).await
     }
+
+    #[tool(
+        description = "List all payments with optional filtering by customer, invoice, and pagination"
+    )]
+    pub async fn list_payments(
+        &self,
+        parameters: Parameters<crate::tools::payment::ListPaymentsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.payment_service
+            .list_payments(parameters, context)
+            .await
+    }
+
+    #[tool(description = "Get a specific payment by its Lago ID")]
+    pub async fn get_payment(
+        &self,
+        parameters: Parameters<crate::tools::payment::GetPaymentArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.payment_service.get_payment(parameters, context).await
+    }
+
+    #[tool(
+        description = "List all payments for a specific customer with optional filtering by invoice"
+    )]
+    pub async fn list_customer_payments(
+        &self,
+        parameters: Parameters<crate::tools::payment::ListCustomerPaymentsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.payment_service
+            .list_customer_payments(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Create a manual payment for an invoice. Use this to record payments made outside of Lago's payment providers."
+    )]
+    pub async fn create_payment(
+        &self,
+        parameters: Parameters<crate::tools::payment::CreatePaymentArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.payment_service
+            .create_payment(parameters, context)
+            .await
+    }
 }
 
 #[tool_handler]
@@ -515,7 +658,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, activity logs, API logs, events, and other Lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, payments, activity logs, API logs, events, and other Lago resources. Use the available tools to interact with the Lago API.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()
