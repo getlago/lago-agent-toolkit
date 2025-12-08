@@ -504,6 +504,17 @@ impl LagoMcpServer {
     }
 
     #[tool(
+        description = "List all usage events from Lago with optional filtering by subscription, billable metric code, and timestamp range"
+    )]
+    pub async fn list_events(
+        &self,
+        parameters: Parameters<crate::tools::event::ListEventsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.event_service.list_events(parameters, context).await
+    }
+
+    #[tool(
         description = "List credit notes from Lago with optional filtering by customer, dates, reason, status, and amount range"
     )]
     pub async fn list_credit_notes(

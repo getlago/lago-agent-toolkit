@@ -99,6 +99,7 @@ Once configured, you can ask Claude natural language questions about your billin
 ### Events
 - **`get_event`**: Retrieve a usage event by transaction ID
 - **`create_event`**: Send a usage event to Lago
+- **`list_events`**: List usage events with optional filtering by subscription, code, and timestamp range
 
 ### Credit Notes
 - **`get_credit_note`**: Retrieve a specific credit note by Lago ID
