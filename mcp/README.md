@@ -512,9 +512,33 @@ Send a usage event to Lago. Events are used to track customer usage and are aggr
 }
 ```
 
+#### 23. `list_events`
+List all usage events from Lago with optional filtering by subscription, billable metric code, and timestamp range.
+
+**Parameters:**
+- `external_subscription_id` (string, optional): Filter by external subscription ID
+- `code` (string, optional): Filter by billable metric code
+- `timestamp_from_started_at` (boolean, optional): Requires `external_subscription_id` to be set. Filter events by timestamp after the subscription started at datetime.
+- `timestamp_from` (string, optional): Filter events by timestamp starting from a specific date (ISO 8601 format, e.g., "2024-01-01T00:00:00Z")
+- `timestamp_to` (string, optional): Filter events by timestamp up to a specific date (ISO 8601 format, e.g., "2024-01-31T23:59:59Z")
+- `page` (integer, optional): Page number for pagination (default: 1)
+- `per_page` (integer, optional): Number of items per page (default: 20)
+
+**Example:**
+```json
+{
+  "external_subscription_id": "sub_123",
+  "code": "api_calls",
+  "timestamp_from": "2024-01-01T00:00:00Z",
+  "timestamp_to": "2024-01-31T23:59:59Z",
+  "page": 1,
+  "per_page": 50
+}
+```
+
 ### Applied Coupon Tools
 
-#### 23. `list_applied_coupons`
+#### 24. `list_applied_coupons`
 List applied coupons with optional filtering and pagination.
 
 **Parameters:**
@@ -536,7 +560,7 @@ List applied coupons with optional filtering and pagination.
 }
 ```
 
-#### 24. `apply_coupon`
+#### 25. `apply_coupon`
 Apply a coupon to a customer. Use this to give discounts before or during a subscription.
 
 **Parameters:**
@@ -561,7 +585,7 @@ Apply a coupon to a customer. Use this to give discounts before or during a subs
 
 ### Subscription Tools
 
-#### 25. `list_subscriptions`
+#### 26. `list_subscriptions`
 List subscriptions with optional filtering and pagination.
 
 **Parameters:**
@@ -581,7 +605,7 @@ List subscriptions with optional filtering and pagination.
 }
 ```
 
-#### 26. `get_subscription`
+#### 27. `get_subscription`
 Retrieve a specific subscription by its external ID.
 
 **Parameters:**
@@ -594,7 +618,7 @@ Retrieve a specific subscription by its external ID.
 }
 ```
 
-#### 27. `list_customer_subscriptions`
+#### 28. `list_customer_subscriptions`
 List subscriptions for a specific customer with optional filtering and pagination.
 
 **Parameters:**
@@ -615,7 +639,7 @@ List subscriptions for a specific customer with optional filtering and paginatio
 }
 ```
 
-#### 28. `create_subscription`
+#### 29. `create_subscription`
 Create a new subscription for a customer.
 
 **Parameters:**
@@ -651,7 +675,7 @@ Create a new subscription for a customer.
 }
 ```
 
-#### 29. `update_subscription`
+#### 30. `update_subscription`
 Update an existing subscription.
 
 **Parameters:**
@@ -671,7 +695,7 @@ Update an existing subscription.
 }
 ```
 
-#### 30. `delete_subscription`
+#### 31. `delete_subscription`
 Terminate a subscription.
 
 **Parameters:**
@@ -687,7 +711,7 @@ Terminate a subscription.
 
 ### Plan Tools
 
-#### 31. `list_plans`
+#### 32. `list_plans`
 List all plans with optional pagination.
 
 **Parameters:**
@@ -702,7 +726,7 @@ List all plans with optional pagination.
 }
 ```
 
-#### 32. `get_plan`
+#### 33. `get_plan`
 Retrieve a specific plan by its unique code.
 
 **Parameters:**
@@ -715,7 +739,7 @@ Retrieve a specific plan by its unique code.
 }
 ```
 
-#### 33. `create_plan`
+#### 34. `create_plan`
 Create a new plan in Lago. Plans define pricing configuration with billing interval, base amount, and optional usage-based charges.
 
 **Parameters:**
@@ -773,7 +797,7 @@ Create a new plan in Lago. Plans define pricing configuration with billing inter
 }
 ```
 
-#### 34. `update_plan`
+#### 35. `update_plan`
 Update an existing plan in Lago.
 
 **Parameters:**
@@ -805,7 +829,7 @@ Update an existing plan in Lago.
 }
 ```
 
-#### 35. `delete_plan`
+#### 36. `delete_plan`
 Delete a plan by its unique code. Note: This plan could be associated with active subscriptions.
 
 **Parameters:**

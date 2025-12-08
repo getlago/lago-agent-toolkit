@@ -3,9 +3,30 @@ use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::Req
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use lago_types::requests::event::{CreateEventInput, CreateEventRequest, GetEventRequest};
+use lago_types::{
+    models::PaginationParams,
+    requests::event::{CreateEventInput, CreateEventRequest, GetEventRequest, ListEventsRequest},
+};
 
 use crate::tools::{create_lago_client, error_result, success_result};
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct ListEventsArgs {
+    /// Filter by external subscription ID.
+    pub external_subscription_id: Option<String>,
+    /// Filter by billable metric code.
+    pub code: Option<String>,
+    /// Requires `external_subscription_id` to be set. Filter events by timestamp after the subscription started at datetime.
+    pub timestamp_from_started_at: Option<bool>,
+    /// Filter events by timestamp starting from a specific date (ISO 8601 format, e.g., "2024-01-01T00:00:00Z").
+    pub timestamp_from: Option<String>,
+    /// Filter events by timestamp up to a specific date (ISO 8601 format, e.g., "2024-01-31T23:59:59Z").
+    pub timestamp_to: Option<String>,
+    /// Page number for pagination (default: 1).
+    pub page: Option<i32>,
+    /// Number of items per page (default: 20).
+    pub per_page: Option<i32>,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct GetEventArgs {
@@ -136,6 +157,63 @@ impl EventService {
                     error = %e,
                     "{error_message}"
                 );
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn list_events(
+        &self,
+        Parameters(args): Parameters<ListEventsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let mut pagination = PaginationParams::new();
+        if let Some(page) = args.page {
+            pagination = pagination.with_page(page);
+        }
+        if let Some(per_page) = args.per_page {
+            pagination = pagination.with_per_page(per_page);
+        }
+
+        let mut request = ListEventsRequest::new().with_pagination(pagination);
+
+        if let Some(external_subscription_id) = args.external_subscription_id {
+            request = request.with_external_subscription_id(external_subscription_id);
+        }
+
+        if let Some(code) = args.code {
+            request = request.with_code(code);
+        }
+
+        if let Some(timestamp_from_started_at) = args.timestamp_from_started_at {
+            request = request.with_timestamp_from_started_at(timestamp_from_started_at);
+        }
+
+        if let Some(timestamp_from) = args.timestamp_from {
+            request = request.with_timestamp_from(timestamp_from);
+        }
+
+        if let Some(timestamp_to) = args.timestamp_to {
+            request = request.with_timestamp_to(timestamp_to);
+        }
+
+        match client.list_events(Some(request)).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "events": response.events,
+                    "pagination": response.meta
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to list events: {e}");
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
