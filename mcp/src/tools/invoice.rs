@@ -629,9 +629,10 @@ impl InvoiceService {
         let request = RetryInvoicePaymentRequest::new(args.lago_id);
 
         match client.retry_invoice_payment(request).await {
-            Ok(response) => {
+            Ok(_) => {
                 let result = serde_json::json!({
-                    "invoice": response.invoice,
+                    "success": true,
+                    "message": "Invoice payment retry initiated successfully",
                 });
 
                 Ok(success_result(&result))
