@@ -38,8 +38,6 @@ Add this configuration to your Claude Desktop MCP settings:
         "--name", "lago-mcp-server",
         "-e", "LAGO_API_KEY=your_lago_api_key",
         "-e", "LAGO_API_URL=https://api.getlago.com/api/v1",
-        "-e", "MISTRAL_AGENT_ID=your_mistral_agent_id",
-        "-e", "MISTRAL_API_KEY=your_mistral_api_key",
         "getlago/lago-mcp-server:latest"
       ]
     }
