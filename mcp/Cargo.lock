@@ -915,9 +915,9 @@ dependencies = [
 
 [[package]]
 name = "lago-client"
-version = "0.1.16"
+version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57c03121138e72d80d90bf305161dc34722fb8da1ea0c3a23b30c2deaf6baa31"
+checksum = "72bea4fc67f962c73fabed3a91abee4a77ff93cd4391ed50e4dab8a69517334a"
 dependencies = [
  "anyhow",
  "lago-types",
@@ -955,9 +955,9 @@ dependencies = [
 
 [[package]]
 name = "lago-types"
-version = "0.1.16"
+version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf8f6f8318e3340fa761f578d74f6dc6234c3a7cd59573cb0f47481b03b5afab"
+checksum = "9d737524f876e20d6d7f58be339724d69de511e04c2237ce03959f2a457e1e7f"
 dependencies = [
  "chrono",
  "reqwest",
