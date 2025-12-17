@@ -21,6 +21,7 @@ use crate::tools::invoice::InvoiceService;
 use crate::tools::payment::PaymentService;
 use crate::tools::plan::PlanService;
 use crate::tools::subscription::SubscriptionService;
+use crate::tools::validate_tool_permission;
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -85,6 +86,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::GetInvoiceArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_invoice") {
+            return Ok(e);
+        }
         self.invoice_service.get_invoice(parameters, context).await
     }
 
@@ -96,6 +100,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::ListInvoicesArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_invoices") {
+            return Ok(e);
+        }
         self.invoice_service
             .list_invoices(parameters, context)
             .await
@@ -109,6 +116,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::PreviewInvoiceArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "preview_invoice") {
+            return Ok(e);
+        }
         self.invoice_service
             .preview_invoice(parameters, context)
             .await
@@ -122,6 +132,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::CreateInvoiceArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_invoice") {
+            return Ok(e);
+        }
         self.invoice_service
             .create_invoice(parameters, context)
             .await
@@ -135,6 +148,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::UpdateInvoiceArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "update_invoice") {
+            return Ok(e);
+        }
         self.invoice_service
             .update_invoice(parameters, context)
             .await
@@ -148,6 +164,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::ListCustomerInvoicesArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_customer_invoices") {
+            return Ok(e);
+        }
         self.invoice_service
             .list_customer_invoices(parameters, context)
             .await
@@ -161,6 +180,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::RefreshInvoiceArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "refresh_invoice") {
+            return Ok(e);
+        }
         self.invoice_service
             .refresh_invoice(parameters, context)
             .await
@@ -174,6 +196,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::DownloadInvoiceArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "download_invoice") {
+            return Ok(e);
+        }
         self.invoice_service
             .download_invoice(parameters, context)
             .await
@@ -187,6 +212,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::RetryInvoiceArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "retry_invoice") {
+            return Ok(e);
+        }
         self.invoice_service
             .retry_invoice(parameters, context)
             .await
@@ -200,6 +228,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::invoice::RetryInvoicePaymentArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "retry_invoice_payment") {
+            return Ok(e);
+        }
         self.invoice_service
             .retry_invoice_payment(parameters, context)
             .await
@@ -211,6 +242,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::customer::GetCustomerArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_customer") {
+            return Ok(e);
+        }
         self.customer_service
             .get_customer(parameters, context)
             .await
@@ -224,6 +258,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::customer::ListCustomersArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_customers") {
+            return Ok(e);
+        }
         self.customer_service
             .list_customers(parameters, context)
             .await
@@ -235,6 +272,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::customer::CreateCustomerArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_customer") {
+            return Ok(e);
+        }
         self.customer_service
             .create_customer(parameters, context)
             .await
@@ -248,6 +288,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::customer_usage::GetCustomerCurrentUsageArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_customer_current_usage") {
+            return Ok(e);
+        }
         self.customer_usage_service
             .get_customer_current_usage(parameters, context)
             .await
@@ -261,6 +304,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::subscription::ListSubscriptionsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_subscriptions") {
+            return Ok(e);
+        }
         self.subscription_service
             .list_subscriptions(parameters, context)
             .await
@@ -272,6 +318,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::subscription::GetSubscriptionArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_subscription") {
+            return Ok(e);
+        }
         self.subscription_service
             .get_subscription(parameters, context)
             .await
@@ -285,6 +334,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::subscription::ListCustomerSubscriptionsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_customer_subscriptions") {
+            return Ok(e);
+        }
         self.subscription_service
             .list_customer_subscriptions(parameters, context)
             .await
@@ -298,6 +350,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::subscription::CreateSubscriptionArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_subscription") {
+            return Ok(e);
+        }
         self.subscription_service
             .create_subscription(parameters, context)
             .await
@@ -311,6 +366,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::subscription::UpdateSubscriptionArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "update_subscription") {
+            return Ok(e);
+        }
         self.subscription_service
             .update_subscription(parameters, context)
             .await
@@ -322,6 +380,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::subscription::DeleteSubscriptionArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "delete_subscription") {
+            return Ok(e);
+        }
         self.subscription_service
             .delete_subscription(parameters, context)
             .await
@@ -333,6 +394,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::billable_metric::GetBillableMetricArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_billable_metric") {
+            return Ok(e);
+        }
         self.billable_metric_service
             .get_billable_metric(parameters, context)
             .await
@@ -346,6 +410,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::billable_metric::ListBillableMetricsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_billable_metrics") {
+            return Ok(e);
+        }
         self.billable_metric_service
             .list_billable_metrics(parameters, context)
             .await
@@ -357,6 +424,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::billable_metric::CreateBillableMetricArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_billable_metric") {
+            return Ok(e);
+        }
         self.billable_metric_service
             .create_billable_metric(parameters, context)
             .await
@@ -368,6 +438,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::activity_log::GetActivityLogArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_activity_log") {
+            return Ok(e);
+        }
         self.activity_log_service
             .get_activity_log(parameters, context)
             .await
@@ -381,6 +454,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::activity_log::ListActivityLogsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_activity_logs") {
+            return Ok(e);
+        }
         self.activity_log_service
             .list_activity_logs(parameters, context)
             .await
@@ -392,6 +468,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::api_log::GetApiLogArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_api_log") {
+            return Ok(e);
+        }
         self.api_log_service.get_api_log(parameters, context).await
     }
 
@@ -403,6 +482,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::api_log::ListApiLogsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_api_logs") {
+            return Ok(e);
+        }
         self.api_log_service
             .list_api_logs(parameters, context)
             .await
@@ -416,6 +498,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::applied_coupon::ListAppliedCouponsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_applied_coupons") {
+            return Ok(e);
+        }
         self.applied_coupon_service
             .list_applied_coupons(parameters, context)
             .await
@@ -429,6 +514,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::applied_coupon::ApplyCouponArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "apply_coupon") {
+            return Ok(e);
+        }
         self.applied_coupon_service
             .apply_coupon(parameters, context)
             .await
@@ -440,6 +528,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::coupon::ListCouponsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_coupons") {
+            return Ok(e);
+        }
         self.coupon_service.list_coupons(parameters, context).await
     }
 
@@ -449,6 +540,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::coupon::GetCouponArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_coupon") {
+            return Ok(e);
+        }
         self.coupon_service.get_coupon(parameters, context).await
     }
 
@@ -460,6 +554,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::coupon::CreateCouponArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_coupon") {
+            return Ok(e);
+        }
         self.coupon_service.create_coupon(parameters, context).await
     }
 
@@ -471,6 +568,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::coupon::UpdateCouponArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "update_coupon") {
+            return Ok(e);
+        }
         self.coupon_service.update_coupon(parameters, context).await
     }
 
@@ -480,6 +580,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::coupon::DeleteCouponArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "delete_coupon") {
+            return Ok(e);
+        }
         self.coupon_service.delete_coupon(parameters, context).await
     }
 
@@ -489,6 +592,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::event::GetEventArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_event") {
+            return Ok(e);
+        }
         self.event_service.get_event(parameters, context).await
     }
 
@@ -500,6 +606,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::event::CreateEventArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_event") {
+            return Ok(e);
+        }
         self.event_service.create_event(parameters, context).await
     }
 
@@ -511,6 +620,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::event::ListEventsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_events") {
+            return Ok(e);
+        }
         self.event_service.list_events(parameters, context).await
     }
 
@@ -522,6 +634,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::credit_note::ListCreditNotesArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_credit_notes") {
+            return Ok(e);
+        }
         self.credit_note_service
             .list_credit_notes(parameters, context)
             .await
@@ -533,6 +648,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::credit_note::GetCreditNoteArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_credit_note") {
+            return Ok(e);
+        }
         self.credit_note_service
             .get_credit_note(parameters, context)
             .await
@@ -546,6 +664,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::credit_note::CreateCreditNoteArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_credit_note") {
+            return Ok(e);
+        }
         self.credit_note_service
             .create_credit_note(parameters, context)
             .await
@@ -559,6 +680,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::credit_note::UpdateCreditNoteArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "update_credit_note") {
+            return Ok(e);
+        }
         self.credit_note_service
             .update_credit_note(parameters, context)
             .await
@@ -570,6 +694,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::plan::ListPlansArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_plans") {
+            return Ok(e);
+        }
         self.plan_service.list_plans(parameters, context).await
     }
 
@@ -579,6 +706,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::plan::GetPlanArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_plan") {
+            return Ok(e);
+        }
         self.plan_service.get_plan(parameters, context).await
     }
 
@@ -590,6 +720,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::plan::CreatePlanArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_plan") {
+            return Ok(e);
+        }
         self.plan_service.create_plan(parameters, context).await
     }
 
@@ -601,6 +734,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::plan::UpdatePlanArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "update_plan") {
+            return Ok(e);
+        }
         self.plan_service.update_plan(parameters, context).await
     }
 
@@ -612,6 +748,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::plan::DeletePlanArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "delete_plan") {
+            return Ok(e);
+        }
         self.plan_service.delete_plan(parameters, context).await
     }
 
@@ -623,6 +762,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::payment::ListPaymentsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_payments") {
+            return Ok(e);
+        }
         self.payment_service
             .list_payments(parameters, context)
             .await
@@ -634,6 +776,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::payment::GetPaymentArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "get_payment") {
+            return Ok(e);
+        }
         self.payment_service.get_payment(parameters, context).await
     }
 
@@ -645,6 +790,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::payment::ListCustomerPaymentsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "list_customer_payments") {
+            return Ok(e);
+        }
         self.payment_service
             .list_customer_payments(parameters, context)
             .await
@@ -658,6 +806,9 @@ impl LagoMcpServer {
         parameters: Parameters<crate::tools::payment::CreatePaymentArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(e) = validate_tool_permission(&context, "create_payment") {
+            return Ok(e);
+        }
         self.payment_service
             .create_payment(parameters, context)
             .await

@@ -1,0 +1,958 @@
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "list_customers",
+        "description": "List customers from Lago with optional filtering by external customer ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "Filter by external customer ID" },
+            "page": { "type": "integer", "description": "Page number for pagination" },
+            "per_page": { "type": "integer", "description": "Number of items per page" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_customer",
+        "description": "Get a specific customer by their external ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "The external customer ID" }
+          },
+          "required": ["external_customer_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_customer",
+        "description": "Create or update a customer in Lago",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_id": { "type": "string", "description": "External unique identifier for the customer" },
+            "name": { "type": "string", "description": "Customer name" },
+            "firstname": { "type": "string", "description": "First name" },
+            "lastname": { "type": "string", "description": "Last name" },
+            "email": { "type": "string", "description": "Email address" },
+            "address_line1": { "type": "string", "description": "Address line 1" },
+            "address_line2": { "type": "string", "description": "Address line 2" },
+            "city": { "type": "string", "description": "City" },
+            "country": { "type": "string", "description": "Country code (ISO 3166-1 alpha-2)" },
+            "state": { "type": "string", "description": "State or province" },
+            "zipcode": { "type": "string", "description": "ZIP or postal code" },
+            "phone": { "type": "string", "description": "Phone number" },
+            "url": { "type": "string", "description": "Customer website URL" },
+            "legal_name": { "type": "string", "description": "Legal company name" },
+            "legal_number": { "type": "string", "description": "Legal registration number" },
+            "logo_url": { "type": "string", "description": "URL to customer logo" },
+            "tax_identification_number": { "type": "string", "description": "Tax ID number" },
+            "timezone": { "type": "string", "description": "Timezone (e.g., America/New_York)" },
+            "currency": { "type": "string", "description": "Currency code (ISO 4217)" },
+            "net_payment_term": { "type": "integer", "description": "Payment term in days" },
+            "customer_type": { "type": "string", "description": "Customer type: company or individual" },
+            "finalize_zero_amount_invoice": { "type": "string", "description": "How to handle zero amount invoices: inherit, skip, or finalize" }
+          },
+          "required": ["external_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_invoices",
+        "description": "List invoices from Lago with optional filtering by customer, dates, status and type",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_external_id": { "type": "string", "description": "Filter by external customer ID" },
+            "issuing_date_from": { "type": "string", "description": "Filter by issuing date from (ISO 8601)" },
+            "issuing_date_to": { "type": "string", "description": "Filter by issuing date to (ISO 8601)" },
+            "status": { "type": "string", "description": "Filter by status: draft, finalized, voided, pending, failed" },
+            "payment_status": { "type": "string", "description": "Filter by payment status: pending, succeeded, failed" },
+            "invoice_type": { "type": "string", "description": "Filter by type: subscription, add_on, credit, one_off, advance_charges, progressive_billing" },
+            "page": { "type": "integer", "description": "Page number" },
+            "per_page": { "type": "integer", "description": "Items per page" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_invoice",
+        "description": "Get a specific invoice by its Lago ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "invoice_id": { "type": "string", "description": "The Lago invoice ID (UUID)" }
+          },
+          "required": ["invoice_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "preview_invoice",
+        "description": "Preview an invoice before creating it. Use this to estimate billing amounts for new subscriptions or plan changes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_external_id": { "type": "string", "description": "External ID of existing customer" },
+            "customer_name": { "type": "string", "description": "Customer name for preview" },
+            "customer_currency": { "type": "string", "description": "Currency code" },
+            "customer_address_line1": { "type": "string", "description": "Address line 1" },
+            "customer_address_line2": { "type": "string", "description": "Address line 2" },
+            "customer_city": { "type": "string", "description": "City" },
+            "customer_state": { "type": "string", "description": "State" },
+            "customer_country": { "type": "string", "description": "Country code" },
+            "customer_tax_identification_number": { "type": "string", "description": "Tax ID" },
+            "plan_code": { "type": "string", "description": "Plan code to preview" },
+            "subscription_at": { "type": "string", "description": "Subscription start date (ISO 8601)" },
+            "billing_time": { "type": "string", "description": "Billing time: calendar or anniversary" },
+            "billing_entity_code": { "type": "string", "description": "Billing entity code" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_invoice",
+        "description": "Create a one-off invoice for a customer with add-on charges",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "External customer ID" },
+            "currency": { "type": "string", "description": "Currency code (ISO 4217)" },
+            "fees": {
+              "type": "array",
+              "description": "List of fees to include",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "add_on_code": { "type": "string", "description": "Add-on code" },
+                  "units": { "type": "number", "description": "Number of units" },
+                  "unit_amount_cents": { "type": "integer", "description": "Price per unit in cents" },
+                  "description": { "type": "string", "description": "Fee description" },
+                  "tax_codes": { "type": "array", "items": { "type": "string" }, "description": "Tax codes" }
+                },
+                "required": ["add_on_code", "units"]
+              }
+            }
+          },
+          "required": ["external_customer_id", "currency", "fees"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "update_invoice",
+        "description": "Update an existing invoice's payment status or metadata",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "lago_id": { "type": "string", "description": "The Lago invoice ID (UUID)" },
+            "payment_status": { "type": "string", "description": "Payment status: pending, succeeded, failed" },
+            "metadata": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "description": "Existing metadata ID" },
+                  "key": { "type": "string" },
+                  "value": { "type": "string" }
+                },
+                "required": ["key", "value"]
+              }
+            }
+          },
+          "required": ["lago_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_customer_invoices",
+        "description": "List all invoices for a specific customer",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "External customer ID" },
+            "page": { "type": "integer", "description": "Page number" },
+            "per_page": { "type": "integer", "description": "Items per page" }
+          },
+          "required": ["external_customer_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "refresh_invoice",
+        "description": "Refresh a draft invoice by re-fetching customer info and recomputing taxes",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "lago_id": { "type": "string", "description": "The Lago invoice ID (UUID)" }
+          },
+          "required": ["lago_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "download_invoice",
+        "description": "Trigger PDF generation for an invoice and get the download URL",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "lago_id": { "type": "string", "description": "The Lago invoice ID (UUID)" }
+          },
+          "required": ["lago_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "retry_invoice",
+        "description": "Retry finalization for a failed invoice",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "lago_id": { "type": "string", "description": "The Lago invoice ID (UUID)" }
+          },
+          "required": ["lago_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "retry_invoice_payment",
+        "description": "Retry payment collection for an invoice",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "lago_id": { "type": "string", "description": "The Lago invoice ID (UUID)" }
+          },
+          "required": ["lago_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_subscriptions",
+        "description": "List all subscriptions with optional filtering by plan code and status",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "plan_code": { "type": "string", "description": "Filter by plan code" },
+            "status": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Filter by status: active, pending, canceled, terminated"
+            },
+            "page": { "type": "integer", "description": "Page number" },
+            "per_page": { "type": "integer", "description": "Items per page" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_subscription",
+        "description": "Get a specific subscription by its external ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_id": { "type": "string", "description": "External subscription ID" }
+          },
+          "required": ["external_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_customer_subscriptions",
+        "description": "List all subscriptions for a specific customer",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "External customer ID" },
+            "plan_code": { "type": "string", "description": "Filter by plan code" },
+            "status": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Filter by status: active, pending, canceled, terminated"
+            },
+            "page": { "type": "integer", "description": "Page number" },
+            "per_page": { "type": "integer", "description": "Items per page" }
+          },
+          "required": ["external_customer_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_subscription",
+        "description": "Create a new subscription to assign a plan to a customer",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "External customer ID" },
+            "plan_code": { "type": "string", "description": "Plan code to subscribe to" },
+            "name": { "type": "string", "description": "Display name for the subscription" },
+            "external_id": { "type": "string", "description": "External subscription ID" },
+            "billing_time": { "type": "string", "description": "Billing time: anniversary or calendar" },
+            "subscription_at": { "type": "string", "description": "Start date (ISO 8601)" },
+            "ending_at": { "type": "string", "description": "End date (ISO 8601)" },
+            "plan_overrides": {
+              "type": "object",
+              "properties": {
+                "amount_cents": { "type": "integer" },
+                "amount_currency": { "type": "string" },
+                "description": { "type": "string" },
+                "invoice_display_name": { "type": "string" },
+                "name": { "type": "string" },
+                "trial_period": { "type": "number" }
+              }
+            }
+          },
+          "required": ["external_customer_id", "plan_code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "update_subscription",
+        "description": "Update an existing subscription",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_id": { "type": "string", "description": "External subscription ID" },
+            "name": { "type": "string", "description": "New name" },
+            "ending_at": { "type": "string", "description": "New end date (ISO 8601)" },
+            "plan_code": { "type": "string", "description": "New plan code" },
+            "subscription_at": { "type": "string", "description": "New start date (ISO 8601)" },
+            "plan_overrides": {
+              "type": "object",
+              "properties": {
+                "amount_cents": { "type": "integer" },
+                "amount_currency": { "type": "string" },
+                "description": { "type": "string" },
+                "invoice_display_name": { "type": "string" },
+                "name": { "type": "string" },
+                "trial_period": { "type": "number" }
+              }
+            }
+          },
+          "required": ["external_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "delete_subscription",
+        "description": "Terminate a subscription by its external ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_id": { "type": "string", "description": "External subscription ID" },
+            "status": { "type": "string", "description": "Termination status (defaults to terminated)" }
+          },
+          "required": ["external_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_plans",
+        "description": "List all plans from Lago",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "page": { "type": "integer", "description": "Page number" },
+            "per_page": { "type": "integer", "description": "Items per page" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_plan",
+        "description": "Get a specific plan by its unique code",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string", "description": "Plan code" }
+          },
+          "required": ["code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_plan",
+        "description": "Create a new plan in Lago",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "Plan name" },
+            "code": { "type": "string", "description": "Unique plan code" },
+            "interval": { "type": "string", "description": "Billing interval: weekly, monthly, quarterly, semiannual, yearly" },
+            "amount_cents": { "type": "integer", "description": "Base amount in cents" },
+            "amount_currency": { "type": "string", "description": "Currency code (ISO 4217)" },
+            "invoice_display_name": { "type": "string", "description": "Display name for invoices" },
+            "description": { "type": "string", "description": "Plan description" },
+            "trial_period": { "type": "number", "description": "Trial period in days" },
+            "pay_in_advance": { "type": "boolean", "description": "Bill in advance" },
+            "bill_charges_monthly": { "type": "boolean", "description": "Bill charges monthly for yearly plans" },
+            "tax_codes": { "type": "array", "items": { "type": "string" }, "description": "Tax codes" }
+          },
+          "required": ["name", "code", "interval", "amount_cents", "amount_currency"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "update_plan",
+        "description": "Update an existing plan in Lago",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string", "description": "Plan code to update" },
+            "name": { "type": "string", "description": "New name" },
+            "new_code": { "type": "string", "description": "New code" },
+            "interval": { "type": "string", "description": "New interval" },
+            "amount_cents": { "type": "integer", "description": "New amount in cents" },
+            "amount_currency": { "type": "string", "description": "New currency" },
+            "invoice_display_name": { "type": "string" },
+            "description": { "type": "string" },
+            "trial_period": { "type": "number" },
+            "pay_in_advance": { "type": "boolean" },
+            "bill_charges_monthly": { "type": "boolean" },
+            "tax_codes": { "type": "array", "items": { "type": "string" } },
+            "cascade_updates": { "type": "boolean", "description": "Propagate to existing subscriptions" }
+          },
+          "required": ["code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "delete_plan",
+        "description": "Delete a plan by its unique code",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string", "description": "Plan code" }
+          },
+          "required": ["code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_customer_current_usage",
+        "description": "Get the current usage for a customer's subscription in the current billing period",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "External customer ID" },
+            "external_subscription_id": { "type": "string", "description": "External subscription ID" },
+            "apply_taxes": { "type": "boolean", "description": "Apply taxes to the usage (default: true)" }
+          },
+          "required": ["external_customer_id", "external_subscription_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_billable_metrics",
+        "description": "List billable metrics with optional filtering",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "aggregation_type": { "type": "string", "description": "Filter by aggregation type" },
+            "recurring": { "type": "boolean", "description": "Filter by recurring status" },
+            "page": { "type": "integer" },
+            "per_page": { "type": "integer" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_billable_metric",
+        "description": "Get a specific billable metric by its code",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string", "description": "Billable metric code" }
+          },
+          "required": ["code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_billable_metric",
+        "description": "Create a new billable metric in Lago",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "Metric name" },
+            "code": { "type": "string", "description": "Unique code" },
+            "aggregation_type": { "type": "string", "description": "Aggregation: count_agg, sum_agg, max_agg, unique_count_agg, weighted_sum_agg, latest_agg" },
+            "description": { "type": "string" },
+            "recurring": { "type": "boolean" },
+            "rounding_function": { "type": "string", "description": "Rounding: ceil, floor, round" },
+            "rounding_precision": { "type": "integer" },
+            "expression": { "type": "string" },
+            "field_name": { "type": "string" },
+            "weighted_interval": { "type": "string" }
+          },
+          "required": ["name", "code", "aggregation_type"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_event",
+        "description": "Retrieve a specific usage event by its transaction ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "transaction_id": { "type": "string", "description": "Transaction ID of the event" }
+          },
+          "required": ["transaction_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_event",
+        "description": "Send a usage event to Lago. Provide either external_customer_id or external_subscription_id.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "transaction_id": { "type": "string", "description": "Unique identifier for idempotency" },
+            "external_customer_id": { "type": "string", "description": "External customer ID" },
+            "external_subscription_id": { "type": "string", "description": "External subscription ID" },
+            "code": { "type": "string", "description": "Billable metric code" },
+            "timestamp": { "type": "integer", "description": "Unix timestamp in seconds" },
+            "properties": { "type": "object", "description": "Custom event properties" },
+            "precise_total_amount_cents": { "type": "integer", "description": "Precise amount in cents" }
+          },
+          "required": ["transaction_id", "code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_events",
+        "description": "List all usage events from Lago with optional filtering by subscription, billable metric code, and timestamp range",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_subscription_id": { "type": "string", "description": "Filter by external subscription ID" },
+            "code": { "type": "string", "description": "Filter by billable metric code" },
+            "timestamp_from_started_at": { "type": "boolean", "description": "Filter events by timestamp after the subscription started at datetime (requires external_subscription_id)" },
+            "timestamp_from": { "type": "string", "description": "Filter events by timestamp starting from a specific date (ISO 8601 format)" },
+            "timestamp_to": { "type": "string", "description": "Filter events by timestamp up to a specific date (ISO 8601 format)" },
+            "page": { "type": "integer", "description": "Page number for pagination" },
+            "per_page": { "type": "integer", "description": "Number of items per page" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_payments",
+        "description": "List all payments with optional filtering",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "Filter by customer" },
+            "invoice_id": { "type": "string", "description": "Filter by invoice ID (UUID)" },
+            "page": { "type": "integer" },
+            "per_page": { "type": "integer" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_payment",
+        "description": "Get a specific payment by its Lago ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "lago_id": { "type": "string", "description": "Payment Lago ID (UUID)" }
+          },
+          "required": ["lago_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_customer_payments",
+        "description": "List all payments for a specific customer",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "External customer ID" },
+            "invoice_id": { "type": "string", "description": "Filter by invoice ID (UUID)" },
+            "page": { "type": "integer" },
+            "per_page": { "type": "integer" }
+          },
+          "required": ["external_customer_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_payment",
+        "description": "Create a manual payment for an invoice",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "invoice_id": { "type": "string", "description": "Invoice ID to pay" },
+            "amount_cents": { "type": "integer", "description": "Payment amount in cents" },
+            "reference": { "type": "string", "description": "Payment reference" },
+            "paid_at": { "type": "string", "description": "Payment date (YYYY-MM-DD)" }
+          },
+          "required": ["invoice_id", "amount_cents", "reference"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_credit_notes",
+        "description": "List credit notes with optional filtering",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "page": { "type": "integer" },
+            "per_page": { "type": "integer" },
+            "external_customer_id": { "type": "string" },
+            "issuing_date_from": { "type": "string", "description": "ISO 8601 date" },
+            "issuing_date_to": { "type": "string", "description": "ISO 8601 date" },
+            "search_term": { "type": "string" },
+            "currency": { "type": "string" },
+            "reason": { "type": "string", "description": "duplicated_charge, product_unsatisfactory, order_change, order_cancellation, fraudulent_charge, other" },
+            "credit_status": { "type": "string", "description": "available, consumed, voided" },
+            "refund_status": { "type": "string", "description": "pending, succeeded, failed" },
+            "invoice_number": { "type": "string" },
+            "amount_from": { "type": "integer" },
+            "amount_to": { "type": "integer" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_credit_note",
+        "description": "Get a specific credit note by its Lago ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "lago_id": { "type": "string", "description": "Credit note Lago ID" }
+          },
+          "required": ["lago_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_credit_note",
+        "description": "Create a credit note for an invoice",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "invoice_id": { "type": "string", "description": "Invoice Lago ID" },
+            "reason": { "type": "string", "description": "Reason: duplicated_charge, product_unsatisfactory, order_change, order_cancellation, fraudulent_charge, other" },
+            "description": { "type": "string" },
+            "credit_amount_cents": { "type": "integer", "description": "Amount to credit in cents" },
+            "refund_amount_cents": { "type": "integer", "description": "Amount to refund in cents" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "fee_id": { "type": "string", "description": "Fee Lago ID" },
+                  "amount_cents": { "type": "integer" }
+                },
+                "required": ["fee_id", "amount_cents"]
+              }
+            }
+          },
+          "required": ["invoice_id", "reason", "credit_amount_cents", "refund_amount_cents", "items"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "update_credit_note",
+        "description": "Update a credit note's refund status",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "lago_id": { "type": "string", "description": "Credit note Lago ID" },
+            "refund_status": { "type": "string", "description": "New refund status: pending, succeeded, failed" }
+          },
+          "required": ["lago_id", "refund_status"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_coupons",
+        "description": "List all coupons in Lago",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "page": { "type": "integer" },
+            "per_page": { "type": "integer" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_coupon",
+        "description": "Get a specific coupon by its unique code",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string", "description": "Coupon code" }
+          },
+          "required": ["code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_coupon",
+        "description": "Create a new coupon. Use either fixed_amount (with amount_cents/currency) or percentage (with percentage_rate).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "Coupon name" },
+            "code": { "type": "string", "description": "Unique code" },
+            "coupon_type": { "type": "string", "description": "Type: fixed_amount or percentage" },
+            "frequency": { "type": "string", "description": "Frequency: once, recurring, or forever" },
+            "amount_cents": { "type": "integer", "description": "Amount for fixed_amount type" },
+            "amount_currency": { "type": "string", "description": "Currency for fixed_amount type" },
+            "percentage_rate": { "type": "string", "description": "Rate for percentage type" },
+            "frequency_duration": { "type": "integer", "description": "Duration for recurring frequency" },
+            "reusable": { "type": "boolean" },
+            "expiration": { "type": "string", "description": "Expiration: no_expiration or time_limit" },
+            "expiration_at": { "type": "string", "description": "Expiration date (ISO 8601)" }
+          },
+          "required": ["name", "code", "coupon_type", "frequency"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "update_coupon",
+        "description": "Update an existing coupon",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string", "description": "Coupon code to update" },
+            "name": { "type": "string" },
+            "coupon_type": { "type": "string" },
+            "frequency": { "type": "string" },
+            "amount_cents": { "type": "integer" },
+            "amount_currency": { "type": "string" },
+            "percentage_rate": { "type": "string" },
+            "frequency_duration": { "type": "integer" },
+            "reusable": { "type": "boolean" },
+            "expiration": { "type": "string" },
+            "expiration_at": { "type": "string" }
+          },
+          "required": ["code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "delete_coupon",
+        "description": "Delete a coupon by its unique code",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": { "type": "string", "description": "Coupon code" }
+          },
+          "required": ["code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_applied_coupons",
+        "description": "List applied coupons with optional filtering",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string", "description": "Filter by status" },
+            "external_customer_id": { "type": "string" },
+            "coupon_code": { "type": "string" },
+            "page": { "type": "integer" },
+            "per_page": { "type": "integer" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "apply_coupon",
+        "description": "Apply a coupon to a customer",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "external_customer_id": { "type": "string", "description": "Customer external ID" },
+            "coupon_code": { "type": "string", "description": "Coupon code to apply" },
+            "amount_cents": { "type": "integer", "description": "Override amount" },
+            "amount_currency": { "type": "string", "description": "Override currency" },
+            "percentage_rate": { "type": "string", "description": "Override percentage" },
+            "frequency": { "type": "string", "description": "Override frequency" },
+            "frequency_duration": { "type": "integer" }
+          },
+          "required": ["external_customer_id", "coupon_code"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_activity_logs",
+        "description": "List activity logs with optional filtering",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "activity_type": { "type": "string" },
+            "source": { "type": "string" },
+            "user_email": { "type": "string" },
+            "external_customer_id": { "type": "string" },
+            "external_subscription_id": { "type": "string" },
+            "resource_type": { "type": "string" },
+            "from_datetime": { "type": "string" },
+            "to_datetime": { "type": "string" },
+            "page": { "type": "integer" },
+            "per_page": { "type": "integer" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_activity_log",
+        "description": "Get a specific activity log by its activity ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "activity_id": { "type": "string", "description": "Activity ID" }
+          },
+          "required": ["activity_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_api_logs",
+        "description": "List API logs with optional filtering",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "http_method": { "type": "string" },
+            "status": { "type": "string" },
+            "api_version": { "type": "string" },
+            "request_path": { "type": "string" },
+            "from_datetime": { "type": "string" },
+            "to_datetime": { "type": "string" },
+            "page": { "type": "integer" },
+            "per_page": { "type": "integer" }
+          },
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "get_api_log",
+        "description": "Get a specific API log by its request ID",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "request_id": { "type": "string", "description": "Request ID" }
+          },
+          "required": ["request_id"]
+        }
+      }
+    }
+  ]
+}

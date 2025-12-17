@@ -64,3 +64,6 @@ pub fn success_result<T: Serialize>(data: &T) -> CallToolResult {
 pub fn error_result(message: impl Into<String>) -> CallToolResult {
     CallToolResult::error(vec![Content::text(message.into())])
 }
+
+/// Re-export permission validation for use in server.rs
+pub use crate::permissions::validate_tool_permission;

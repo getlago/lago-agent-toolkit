@@ -9,6 +9,7 @@ use rmcp::{
 };
 use tracing_subscriber::EnvFilter;
 
+mod permissions;
 mod server;
 mod tools;
 
