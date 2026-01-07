@@ -72,6 +72,7 @@ Once configured, you can ask Claude natural language questions about your billin
 - **`download_invoice`**: Download an invoice PDF
 - **`retry_invoice`**: Retry generation of a failed invoice
 - **`retry_invoice_payment`**: Retry payment collection for an invoice
+- **`void_invoice`**: Void a finalized invoice to prevent further modifications or payments
 
 ### Customers
 - **`get_customer`**: Retrieve a customer by external ID
