@@ -27,7 +27,7 @@ GEM
     tty-screen (0.8.2)
     unicode-display_width (2.6.0)
     unicode_utils (1.4.0)
-    uri (1.0.3)
+    uri (1.0.4)
     wisper (2.0.1)
 
 PLATFORMS
