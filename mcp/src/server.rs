@@ -205,6 +205,17 @@ impl LagoMcpServer {
             .await
     }
 
+    #[tool(
+        description = "Void a finalized invoice. This changes the invoice status to 'voided' and prevents further modifications or payments. Only finalized invoices can be voided."
+    )]
+    pub async fn void_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::VoidInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service.void_invoice(parameters, context).await
+    }
+
     #[tool(description = "Get a specific customer by their external ID")]
     pub async fn get_customer(
         &self,

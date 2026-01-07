@@ -11,7 +11,7 @@ use lago_types::{
         InvoicePreviewInput, InvoicePreviewRequest, InvoicePreviewSubscriptions,
         ListCustomerInvoicesRequest, ListInvoicesRequest, RefreshInvoiceRequest,
         RetryInvoicePaymentRequest, RetryInvoiceRequest, UpdateInvoiceInput,
-        UpdateInvoiceMetadataInput, UpdateInvoiceRequest,
+        UpdateInvoiceMetadataInput, UpdateInvoiceRequest, VoidInvoiceRequest,
     },
 };
 
@@ -146,6 +146,12 @@ pub struct RetryInvoiceArgs {
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct RetryInvoicePaymentArgs {
     /// The Lago ID (UUID) of the invoice to retry payment for.
+    pub lago_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct VoidInvoiceArgs {
+    /// The Lago ID (UUID) of the finalized invoice to void.
     pub lago_id: String,
 }
 
@@ -639,6 +645,34 @@ impl InvoiceService {
             }
             Err(e) => {
                 let error_message = format!("Failed to retry invoice payment: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn void_invoice(
+        &self,
+        Parameters(args): Parameters<VoidInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let request = VoidInvoiceRequest::new(args.lago_id);
+
+        match client.void_invoice(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoice": response.invoice,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to void invoice: {e}");
                 tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
