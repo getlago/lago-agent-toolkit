@@ -19,6 +19,8 @@ use crate::tools::{create_lago_client, error_result, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ListInvoicesArgs {
+    /// Search by invoice id, number, customer name, external_id or email.
+    pub search_term: Option<String>,
     pub customer_external_id: Option<String>,
     pub issuing_date_from: Option<String>,
     pub issuing_date_to: Option<String>,
@@ -166,6 +168,10 @@ impl InvoiceService {
     #[allow(clippy::collapsible_if)]
     fn build_request(&self, args: &ListInvoicesArgs) -> ListInvoicesRequest {
         let mut filters = InvoiceFilters::new();
+
+        if let Some(search_term) = &args.search_term {
+            filters = filters.with_search_term(search_term.clone());
+        }
 
         if let Some(customer_external_id) = &args.customer_external_id {
             filters.customer_filter = filters
