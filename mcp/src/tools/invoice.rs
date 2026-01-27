@@ -19,20 +19,32 @@ use crate::tools::{create_lago_client, error_result, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ListInvoicesArgs {
-    /// Search by invoice id, number, customer name, external_id or email.
+    /// **Use this to find an invoice by its number** (e.g., "RAF-8142-202601-312").
+    /// Also searches by invoice id, customer name, customer external_id, or email.
+    /// This is the primary way to look up a specific invoice when you know its number.
     pub search_term: Option<String>,
+    /// Filter by customer external ID (only returns invoices for this customer).
     pub customer_external_id: Option<String>,
+    /// Filter by issuing date (from). Format: YYYY-MM-DD.
     pub issuing_date_from: Option<String>,
+    /// Filter by issuing date (to). Format: YYYY-MM-DD.
     pub issuing_date_to: Option<String>,
+    /// Filter by invoice status: draft, finalized, voided, pending, failed.
     pub status: Option<String>,
+    /// Filter by payment status: pending, succeeded, failed.
     pub payment_status: Option<String>,
+    /// Filter by invoice type: subscription, add_on, credit, one_off, advance_charges, progressive_billing.
     pub invoice_type: Option<String>,
+    /// Page number for pagination.
     pub page: Option<i32>,
+    /// Number of results per page (default: 20, max: 100).
     pub per_page: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct GetInvoiceArgs {
+    /// The Lago ID (UUID) of the invoice. Note: This is NOT the invoice number.
+    /// To find an invoice by its number (e.g., "RAF-8142-202601-312"), use list_invoices with search_term first.
     pub invoice_id: String,
 }
 
@@ -153,7 +165,8 @@ pub struct RetryInvoicePaymentArgs {
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct VoidInvoiceArgs {
-    /// The Lago ID (UUID) of the finalized invoice to void.
+    /// The Lago ID (UUID) of the finalized invoice to void. Note: This is NOT the invoice number.
+    /// To find an invoice by its number (e.g., "RAF-8142-202601-312"), use list_invoices with search_term first.
     pub lago_id: String,
 }
 
