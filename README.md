@@ -62,6 +62,7 @@ Once configured, you can ask Claude natural language questions about your billin
 ## Available Tools
 
 ### Invoices
+- **`find_invoice_by_number`**: Find an invoice by its number (e.g., "RAF-8142-202601-312") and get its Lago ID
 - **`get_invoice`**: Retrieve a specific invoice by Lago ID
 - **`list_invoices`**: Search and filter invoices with advanced criteria
 - **`list_customer_invoices`**: List all invoices for a specific customer

@@ -44,8 +44,15 @@ pub struct ListInvoicesArgs {
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct GetInvoiceArgs {
     /// The Lago ID (UUID) of the invoice. Note: This is NOT the invoice number.
-    /// To find an invoice by its number (e.g., "RAF-8142-202601-312"), use list_invoices with search_term first.
+    /// To find an invoice by its number (e.g., "RAF-8142-202601-312"), use find_invoice_by_number instead.
     pub invoice_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct FindInvoiceByNumberArgs {
+    /// The invoice number to search for (e.g., "RAF-8142-202601-312").
+    /// This will find the invoice and return its details including the lago_id (UUID).
+    pub invoice_number: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -285,6 +292,66 @@ impl InvoiceService {
             }
             Err(e) => {
                 let error_message = format!("Failed to get invoice: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    /// Find an invoice by its number (e.g., "RAF-8142-202601-312").
+    /// Returns the invoice details including the lago_id (UUID) needed for other operations.
+    pub async fn find_invoice_by_number(
+        &self,
+        Parameters(args): Parameters<FindInvoiceByNumberArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        // Use search_term to find the invoice by number
+        let request = ListInvoicesRequest::new().with_search_term(args.invoice_number.clone());
+
+        match client.list_invoices(Some(request)).await {
+            Ok(response) => {
+                // Find exact match by invoice number
+                let exact_match = response
+                    .invoices
+                    .iter()
+                    .find(|inv| inv.number == args.invoice_number);
+
+                match exact_match {
+                    Some(invoice) => {
+                        let result = serde_json::json!({
+                            "found": true,
+                            "invoice": invoice,
+                            "lago_id": invoice.lago_id,
+                            "hint": "Use the lago_id for operations like void_invoice, download_invoice, etc."
+                        });
+                        Ok(success_result(&result))
+                    }
+                    None => {
+                        // No exact match - show what was found
+                        let similar: Vec<&str> = response
+                            .invoices
+                            .iter()
+                            .take(5)
+                            .map(|inv| inv.number.as_str())
+                            .collect();
+
+                        let result = serde_json::json!({
+                            "found": false,
+                            "message": format!("No invoice found with exact number '{}'", args.invoice_number),
+                            "similar_numbers": similar,
+                            "hint": "Check the invoice number and try again, or use list_invoices to browse invoices."
+                        });
+                        Ok(success_result(&result))
+                    }
+                }
+            }
+            Err(e) => {
+                let error_message = format!("Failed to search for invoice: {e}");
                 tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
