@@ -79,7 +79,9 @@ impl LagoMcpServer {
 
 #[tool_router]
 impl LagoMcpServer {
-    #[tool(description = "Get a specific invoice by its Lago ID")]
+    #[tool(
+        description = "Get a specific invoice by its Lago ID (UUID). Note: Use find_invoice_by_number if you have an invoice number like 'RAF-8142-202601-312'"
+    )]
     pub async fn get_invoice(
         &self,
         parameters: Parameters<crate::tools::invoice::GetInvoiceArgs>,
@@ -89,7 +91,20 @@ impl LagoMcpServer {
     }
 
     #[tool(
-        description = "List invoices from Lago with optional filtering by customer, dates, status and type"
+        description = "Find an invoice by its number (e.g., 'RAF-8142-202601-312'). Use this when you have an invoice number and need to find the invoice details or its lago_id for other operations like voiding."
+    )]
+    pub async fn find_invoice_by_number(
+        &self,
+        parameters: Parameters<crate::tools::invoice::FindInvoiceByNumberArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .find_invoice_by_number(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "List invoices from Lago with optional filtering by customer, dates, status and type. Use search_term to find invoices by number."
     )]
     pub async fn list_invoices(
         &self,
@@ -206,7 +221,7 @@ impl LagoMcpServer {
     }
 
     #[tool(
-        description = "Void a finalized invoice. This changes the invoice status to 'voided' and prevents further modifications or payments. Only finalized invoices can be voided."
+        description = "Void a finalized invoice by its Lago ID (UUID). If you have an invoice number like 'RAF-8142-202601-312', use find_invoice_by_number first to get the lago_id. This changes the invoice status to 'voided' and prevents further modifications or payments."
     )]
     pub async fn void_invoice(
         &self,
