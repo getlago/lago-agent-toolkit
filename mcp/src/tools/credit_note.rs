@@ -120,7 +120,7 @@ impl CreditNoteService {
             filter = filter.with_issuing_date_to(to);
         }
         if let Some(term) = args.search_term {
-            filter = filter.with_search_term(term);
+            request = request.with_search_term(term);
         }
         if let Some(currency) = args.currency {
             filter = filter.with_currency(currency);

@@ -169,10 +169,6 @@ impl InvoiceService {
     fn build_request(&self, args: &ListInvoicesArgs) -> ListInvoicesRequest {
         let mut filters = InvoiceFilters::new();
 
-        if let Some(search_term) = &args.search_term {
-            filters = filters.with_search_term(search_term.clone());
-        }
-
         if let Some(customer_external_id) = &args.customer_external_id {
             filters.customer_filter = filters
                 .customer_filter
@@ -214,9 +210,15 @@ impl InvoiceService {
             pagination = pagination.with_per_page(per_page);
         }
 
-        ListInvoicesRequest::new()
+        let mut request = ListInvoicesRequest::new()
             .with_filters(filters)
-            .with_pagination(pagination)
+            .with_pagination(pagination);
+
+        if let Some(search_term) = &args.search_term {
+            request = request.with_search_term(search_term.clone());
+        }
+
+        request
     }
 }
 
