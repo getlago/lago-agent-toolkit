@@ -19,6 +19,8 @@ use crate::tools::{create_lago_client, error_result, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ListInvoicesArgs {
+    /// Search by invoice id, number, customer name, external_id or email.
+    pub search_term: Option<String>,
     pub customer_external_id: Option<String>,
     pub issuing_date_from: Option<String>,
     pub issuing_date_to: Option<String>,
@@ -208,9 +210,15 @@ impl InvoiceService {
             pagination = pagination.with_per_page(per_page);
         }
 
-        ListInvoicesRequest::new()
+        let mut request = ListInvoicesRequest::new()
             .with_filters(filters)
-            .with_pagination(pagination)
+            .with_pagination(pagination);
+
+        if let Some(search_term) = &args.search_term {
+            request = request.with_search_term(search_term.clone());
+        }
+
+        request
     }
 }
 
