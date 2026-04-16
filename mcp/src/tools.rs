@@ -21,6 +21,45 @@ use rmcp::{
 use serde::Serialize;
 use std::env;
 
+pub struct LagoApiConfig {
+    pub api_key: String,
+    pub base_url: String,
+}
+
+pub async fn get_lago_api_config(
+    context: &RequestContext<RoleServer>,
+) -> Result<LagoApiConfig, CallToolResult> {
+    let (header_key, header_url) = context
+        .extensions
+        .get::<axum::http::request::Parts>()
+        .map(|parts| {
+            let key = parts
+                .headers
+                .get("X-LAGO-API-KEY")
+                .and_then(|v| v.to_str().ok())
+                .map(|s| s.to_string());
+            let url = env::var("LAGO_API_URL").ok();
+            (key, url)
+        })
+        .unwrap_or((None, None));
+
+    if let (Some(key), Some(url)) = (header_key, header_url) {
+        return Ok(LagoApiConfig {
+            api_key: key,
+            base_url: url,
+        });
+    }
+
+    let api_key = env::var("LAGO_API_KEY").map_err(|_| {
+        error_result("LAGO_API_KEY environment variable not set")
+    })?;
+    let base_url = env::var("LAGO_API_URL").unwrap_or_else(|_| {
+        "https://api.getlago.com/api/v1".to_string()
+    });
+
+    Ok(LagoApiConfig { api_key, base_url })
+}
+
 pub async fn create_lago_client(
     context: &RequestContext<RoleServer>,
 ) -> Result<LagoClient, CallToolResult> {
