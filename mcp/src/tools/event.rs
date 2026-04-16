@@ -100,8 +100,7 @@ impl EventService {
                     .text()
                     .await
                     .unwrap_or_else(|_| "Unknown error".to_string());
-                let error_message =
-                    format!("Failed to get event (HTTP {status}): {body}");
+                let error_message = format!("Failed to get event (HTTP {status}): {body}");
                 tracing::error!(
                     transaction_id = %args.transaction_id,
                     "{error_message}"
@@ -253,8 +252,7 @@ impl EventService {
                     .text()
                     .await
                     .unwrap_or_else(|_| "Unknown error".to_string());
-                let error_message =
-                    format!("Failed to list events (HTTP {status}): {body}");
+                let error_message = format!("Failed to list events (HTTP {status}): {body}");
                 tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }

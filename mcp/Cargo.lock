@@ -941,6 +941,7 @@ dependencies = [
  "clap",
  "lago-client",
  "lago-types",
+ "reqwest",
  "rmcp",
  "schemars",
  "serde",
@@ -950,6 +951,7 @@ dependencies = [
  "tokio-util",
  "tracing",
  "tracing-subscriber",
+ "urlencoding",
  "uuid",
 ]
 
