@@ -12,7 +12,7 @@ pub mod payment;
 pub mod plan;
 pub mod subscription;
 
-use lago_client::{Config, Credentials, LagoClient, Region};
+use lago_client::{Config, Credentials, EnvironmentRegionProvider, LagoClient, Region, RegionProvider};
 use rmcp::{
     RoleServer,
     model::{CallToolResult, Content},
@@ -53,9 +53,10 @@ pub async fn get_lago_api_config(
     let api_key = env::var("LAGO_API_KEY").map_err(|_| {
         error_result("LAGO_API_KEY environment variable not set")
     })?;
-    let base_url = env::var("LAGO_API_URL").unwrap_or_else(|_| {
-        "https://api.getlago.com/api/v1".to_string()
-    });
+    let region = EnvironmentRegionProvider::new()
+        .provider_region()
+        .map_err(|e| error_result(format!("Failed to resolve region: {e}")))?;
+    let base_url = region.endpoint().to_string();
 
     Ok(LagoApiConfig { api_key, base_url })
 }
