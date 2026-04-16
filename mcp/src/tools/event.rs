@@ -1,14 +1,10 @@
-use anyhow::Result;
 use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use lago_types::{
-    models::PaginationParams,
-    requests::event::{CreateEventInput, CreateEventRequest, GetEventRequest, ListEventsRequest},
-};
+use lago_types::requests::event::{CreateEventInput, CreateEventRequest};
 
-use crate::tools::{create_lago_client, error_result, success_result};
+use crate::tools::{create_lago_client, error_result, get_lago_api_config, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ListEventsArgs {
@@ -53,11 +49,15 @@ pub struct CreateEventArgs {
 }
 
 #[derive(Clone)]
-pub struct EventService;
+pub struct EventService {
+    http_client: reqwest::Client,
+}
 
 impl EventService {
     pub fn new() -> Self {
-        Self
+        Self {
+            http_client: reqwest::Client::new(),
+        }
     }
 
     pub async fn get_event(
@@ -65,20 +65,47 @@ impl EventService {
         Parameters(args): Parameters<GetEventArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client(&context).await {
-            Ok(client) => client,
+        let config = match get_lago_api_config(&context).await {
+            Ok(config) => config,
             Err(error_result) => return Ok(error_result),
         };
 
-        let request = GetEventRequest::new(args.transaction_id.clone());
+        let encoded_id = urlencoding::encode(&args.transaction_id);
+        let url = format!("{}/events/{}", config.base_url, encoded_id);
 
-        match client.get_event(request).await {
+        match self
+            .http_client
+            .get(&url)
+            .bearer_auth(&config.api_key)
+            .send()
+            .await
+        {
+            Ok(response) if response.status().is_success() => {
+                match response.json::<Value>().await {
+                    Ok(json) => Ok(success_result(&json)),
+                    Err(e) => {
+                        let error_message = format!("Failed to parse event response: {e}");
+                        tracing::error!(
+                            transaction_id = %args.transaction_id,
+                            error = %e,
+                            "{error_message}"
+                        );
+                        Ok(error_result(error_message))
+                    }
+                }
+            }
             Ok(response) => {
-                let result = serde_json::json!({
-                    "event": response.event,
-                });
-
-                Ok(success_result(&result))
+                let status = response.status();
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                let error_message = format!("Failed to get event (HTTP {status}): {body}");
+                tracing::error!(
+                    transaction_id = %args.transaction_id,
+                    "{error_message}"
+                );
+                Ok(error_result(error_message))
             }
             Err(e) => {
                 let error_message = format!("Failed to get event: {e}");
@@ -167,49 +194,67 @@ impl EventService {
         Parameters(args): Parameters<ListEventsArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let client = match create_lago_client(&context).await {
-            Ok(client) => client,
+        let config = match get_lago_api_config(&context).await {
+            Ok(config) => config,
             Err(error_result) => return Ok(error_result),
         };
 
-        let mut pagination = PaginationParams::new();
+        let mut params: Vec<(&str, String)> = Vec::new();
+
         if let Some(page) = args.page {
-            pagination = pagination.with_page(page);
+            params.push(("page", page.to_string()));
         }
         if let Some(per_page) = args.per_page {
-            pagination = pagination.with_per_page(per_page);
+            params.push(("per_page", per_page.to_string()));
         }
-
-        let mut request = ListEventsRequest::new().with_pagination(pagination);
-
-        if let Some(external_subscription_id) = args.external_subscription_id {
-            request = request.with_external_subscription_id(external_subscription_id);
+        if let Some(ref external_subscription_id) = args.external_subscription_id {
+            params.push(("external_subscription_id", external_subscription_id.clone()));
         }
-
-        if let Some(code) = args.code {
-            request = request.with_code(code);
+        if let Some(ref code) = args.code {
+            params.push(("code", code.clone()));
         }
-
         if let Some(timestamp_from_started_at) = args.timestamp_from_started_at {
-            request = request.with_timestamp_from_started_at(timestamp_from_started_at);
+            params.push((
+                "timestamp_from_started_at",
+                timestamp_from_started_at.to_string(),
+            ));
+        }
+        if let Some(ref timestamp_from) = args.timestamp_from {
+            params.push(("timestamp_from", timestamp_from.clone()));
+        }
+        if let Some(ref timestamp_to) = args.timestamp_to {
+            params.push(("timestamp_to", timestamp_to.clone()));
         }
 
-        if let Some(timestamp_from) = args.timestamp_from {
-            request = request.with_timestamp_from(timestamp_from);
-        }
+        let url = format!("{}/events", config.base_url);
 
-        if let Some(timestamp_to) = args.timestamp_to {
-            request = request.with_timestamp_to(timestamp_to);
-        }
-
-        match client.list_events(Some(request)).await {
+        match self
+            .http_client
+            .get(&url)
+            .bearer_auth(&config.api_key)
+            .query(&params)
+            .send()
+            .await
+        {
+            Ok(response) if response.status().is_success() => {
+                match response.json::<Value>().await {
+                    Ok(json) => Ok(success_result(&json)),
+                    Err(e) => {
+                        let error_message = format!("Failed to parse events response: {e}");
+                        tracing::error!("{error_message}");
+                        Ok(error_result(error_message))
+                    }
+                }
+            }
             Ok(response) => {
-                let result = serde_json::json!({
-                    "events": response.events,
-                    "pagination": response.meta
-                });
-
-                Ok(success_result(&result))
+                let status = response.status();
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                let error_message = format!("Failed to list events (HTTP {status}): {body}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
             }
             Err(e) => {
                 let error_message = format!("Failed to list events: {e}");
