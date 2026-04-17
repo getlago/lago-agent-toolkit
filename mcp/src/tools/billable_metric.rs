@@ -1,6 +1,7 @@
 use anyhow::Result;
 use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use lago_types::{
     filters::billable_metric::BillableMetricFilter,
@@ -14,7 +15,7 @@ use lago_types::{
     },
 };
 
-use crate::tools::{create_lago_client, error_result, success_result};
+use crate::tools::{create_lago_client, error_result, get_lago_api_config, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ListBillableMetricsArgs {
@@ -45,17 +46,47 @@ pub struct CreateBillableMetricArgs {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct UpdateBillableMetricArgs {
+    /// The code of the billable metric to update.
+    pub code: String,
+    /// New name of the billable metric.
+    pub name: Option<String>,
+    /// New code for the billable metric.
+    pub new_code: Option<String>,
+    /// New description for the billable metric.
+    pub description: Option<String>,
+    /// Whether the metric persists across billing periods.
+    pub recurring: Option<bool>,
+    /// Rounding function. Possible values: round, ceil, floor.
+    pub rounding_function: Option<String>,
+    /// Number of decimal places for rounding.
+    pub rounding_precision: Option<i32>,
+    /// Expression used to calculate event units.
+    pub expression: Option<String>,
+    /// The property to aggregate on.
+    pub field_name: Option<String>,
+    /// Weighted interval for weighted_sum_agg. Possible values: seconds.
+    pub weighted_interval: Option<String>,
+    /// Filters for differentiated pricing.
+    pub filters: Option<Vec<BillableMetricFilterInput>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct BillableMetricFilterInput {
     pub key: String,
     pub values: Vec<String>,
 }
 
 #[derive(Clone)]
-pub struct BillableMetricService;
+pub struct BillableMetricService {
+    http_client: reqwest::Client,
+}
 
 impl BillableMetricService {
     pub fn new() -> Self {
-        Self
+        Self {
+            http_client: reqwest::Client::new(),
+        }
     }
 
     #[allow(clippy::collapsible_if)]
@@ -224,6 +255,137 @@ impl BillableMetricService {
             Err(e) => {
                 let error_message = format!("Failed to create billable metric: {e}");
                 tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn update_billable_metric(
+        &self,
+        Parameters(args): Parameters<UpdateBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let config = match get_lago_api_config(&context).await {
+            Ok(config) => config,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let mut body = serde_json::Map::new();
+
+        if let Some(name) = args.name {
+            body.insert("name".into(), Value::String(name));
+        }
+        if let Some(new_code) = args.new_code {
+            body.insert("code".into(), Value::String(new_code));
+        }
+        if let Some(description) = args.description {
+            body.insert("description".into(), Value::String(description));
+        }
+        if let Some(recurring) = args.recurring {
+            body.insert("recurring".into(), Value::Bool(recurring));
+        }
+        if let Some(rounding_function_str) = args.rounding_function {
+            if rounding_function_str
+                .parse::<BillableMetricRoundingFunction>()
+                .is_err()
+            {
+                return Ok(error_result(format!(
+                    "Invalid rounding_function: {rounding_function_str}. Valid values are: round, ceil, floor"
+                )));
+            }
+            body.insert(
+                "rounding_function".into(),
+                Value::String(rounding_function_str),
+            );
+        }
+        if let Some(rounding_precision) = args.rounding_precision {
+            body.insert(
+                "rounding_precision".into(),
+                Value::Number(rounding_precision.into()),
+            );
+        }
+        if let Some(expression) = args.expression {
+            body.insert("expression".into(), Value::String(expression));
+        }
+        if let Some(field_name) = args.field_name {
+            body.insert("field_name".into(), Value::String(field_name));
+        }
+        if let Some(weighted_interval_str) = args.weighted_interval {
+            if weighted_interval_str
+                .parse::<BillableMetricWeightedInterval>()
+                .is_err()
+            {
+                return Ok(error_result(format!(
+                    "Invalid weighted_interval: {weighted_interval_str}. Valid values are: seconds"
+                )));
+            }
+            body.insert(
+                "weighted_interval".into(),
+                Value::String(weighted_interval_str),
+            );
+        }
+        if let Some(filters_input) = args.filters {
+            let filters_json: Vec<Value> = filters_input
+                .into_iter()
+                .map(|f| {
+                    serde_json::json!({
+                        "key": f.key,
+                        "values": f.values,
+                    })
+                })
+                .collect();
+            body.insert("filters".into(), Value::Array(filters_json));
+        }
+
+        let payload = serde_json::json!({ "billable_metric": Value::Object(body) });
+
+        let encoded_code = urlencoding::encode(&args.code);
+        let url = format!("{}/billable_metrics/{}", config.base_url, encoded_code);
+
+        match self
+            .http_client
+            .put(&url)
+            .bearer_auth(&config.api_key)
+            .json(&payload)
+            .send()
+            .await
+        {
+            Ok(response) if response.status().is_success() => {
+                match response.json::<Value>().await {
+                    Ok(json) => Ok(success_result(&json)),
+                    Err(e) => {
+                        let error_message =
+                            format!("Failed to parse update billable metric response: {e}");
+                        tracing::error!(
+                            code = %args.code,
+                            error = %e,
+                            "{error_message}"
+                        );
+                        Ok(error_result(error_message))
+                    }
+                }
+            }
+            Ok(response) => {
+                let status = response.status();
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                let error_message =
+                    format!("Failed to update billable metric (HTTP {status}): {body}");
+                tracing::error!(
+                    code = %args.code,
+                    "{error_message}"
+                );
+                Ok(error_result(error_message))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to update billable metric: {e}");
+                tracing::error!(
+                    code = %args.code,
+                    error = %e,
+                    "{error_message}"
+                );
                 Ok(error_result(error_message))
             }
         }

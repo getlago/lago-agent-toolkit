@@ -388,6 +388,17 @@ impl LagoMcpServer {
             .await
     }
 
+    #[tool(description = "Update an existing billable metric in Lago by its code")]
+    pub async fn update_billable_metric(
+        &self,
+        parameters: Parameters<crate::tools::billable_metric::UpdateBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.billable_metric_service
+            .update_billable_metric(parameters, context)
+            .await
+    }
+
     #[tool(description = "Get a specific activity log by its activity ID")]
     pub async fn get_activity_log(
         &self,
