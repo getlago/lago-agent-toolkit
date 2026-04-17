@@ -94,8 +94,7 @@ impl PaymentService {
                 }
                 Err(_) => {
                     return Ok(error_result(format!(
-                        "Invalid invoice_id format: {}. Must be a valid UUID.",
-                        invoice_id_str
+                        "Invalid invoice_id format: {invoice_id_str}. Must be a valid UUID."
                     )));
                 }
             }
@@ -184,8 +183,7 @@ impl PaymentService {
                 }
                 Err(_) => {
                     return Ok(error_result(format!(
-                        "Invalid invoice_id format: {}. Must be a valid UUID.",
-                        invoice_id_str
+                        "Invalid invoice_id format: {invoice_id_str}. Must be a valid UUID."
                     )));
                 }
             }

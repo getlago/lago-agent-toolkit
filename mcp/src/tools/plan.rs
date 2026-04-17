@@ -423,8 +423,7 @@ impl PlanService {
                 input = input.with_interval(interval);
             } else {
                 return Ok(error_result(format!(
-                    "Invalid interval: {}. Must be one of: weekly, monthly, quarterly, semiannual, yearly",
-                    interval_str
+                    "Invalid interval: {interval_str}. Must be one of: weekly, monthly, quarterly, semiannual, yearly"
                 )));
             }
         }

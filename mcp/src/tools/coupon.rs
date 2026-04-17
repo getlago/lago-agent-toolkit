@@ -332,8 +332,7 @@ impl CouponService {
                 }
                 _ => {
                     return Ok(error_result(format!(
-                        "Invalid coupon_type: {}. Must be 'fixed_amount' or 'percentage'",
-                        coupon_type
+                        "Invalid coupon_type: {coupon_type}. Must be 'fixed_amount' or 'percentage'"
                     )));
                 }
             }
@@ -344,8 +343,7 @@ impl CouponService {
                 input = input.with_frequency(frequency);
             } else {
                 return Ok(error_result(format!(
-                    "Invalid frequency: {}. Must be 'once', 'recurring', or 'forever'",
-                    frequency_str
+                    "Invalid frequency: {frequency_str}. Must be 'once', 'recurring', or 'forever'"
                 )));
             }
         }
@@ -371,8 +369,7 @@ impl CouponService {
                 input = input.with_expiration(expiration);
             } else {
                 return Ok(error_result(format!(
-                    "Invalid expiration: {}. Must be 'no_expiration' or 'time_limit'",
-                    expiration_str
+                    "Invalid expiration: {expiration_str}. Must be 'no_expiration' or 'time_limit'"
                 )));
             }
         }
