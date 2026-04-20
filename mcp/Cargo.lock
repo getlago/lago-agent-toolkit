@@ -915,9 +915,9 @@ dependencies = [
 
 [[package]]
 name = "lago-client"
-version = "0.1.20"
+version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1bc17fe47cbbe6f6e7f1ec63acef50c630fdff227d01f40a9cb497571a83578"
+checksum = "1666f882dfdb387c20f8216902cff13138dbafb9f229ec3c5d9f6982bdd0fceb"
 dependencies = [
  "anyhow",
  "lago-types",
@@ -957,9 +957,9 @@ dependencies = [
 
 [[package]]
 name = "lago-types"
-version = "0.1.20"
+version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f65658594803e57c0696f7ad13aa95cfe806f493e03841bf2c97ee599fa3cb3"
+checksum = "95cbc412f63d7cf30c04cc81bc4fe4ee1bf5efe3ce4adb889c23b0673f17e6a3"
 dependencies = [
  "chrono",
  "reqwest",
@@ -1542,9 +1542,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.10"
+version = "0.103.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df33b2b81ac578cabaf06b89b0631153a3f416b0a886e8a7a1707fb51abbd1ef"
+checksum = "8279bb85272c9f10811ae6a6c547ff594d6a7f3c6c6b02ee9726d1d0dcfcdd06"
 dependencies = [
  "ring",
  "rustls-pki-types",

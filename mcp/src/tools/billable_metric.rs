@@ -10,7 +10,7 @@ use lago_types::{
     },
     requests::billable_metric::{
         CreateBillableMetricInput, CreateBillableMetricRequest, GetBillableMetricRequest,
-        ListBillableMetricsRequest,
+        ListBillableMetricsRequest, UpdateBillableMetricInput, UpdateBillableMetricRequest,
     },
 };
 
@@ -41,6 +41,32 @@ pub struct CreateBillableMetricArgs {
     pub expression: Option<String>,
     pub field_name: Option<String>,
     pub weighted_interval: Option<String>,
+    pub filters: Option<Vec<BillableMetricFilterInput>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct UpdateBillableMetricArgs {
+    /// The code of the billable metric to update.
+    pub code: String,
+    /// New name of the billable metric.
+    pub name: Option<String>,
+    /// New code for the billable metric.
+    pub new_code: Option<String>,
+    /// New description for the billable metric.
+    pub description: Option<String>,
+    /// Whether the metric persists across billing periods.
+    pub recurring: Option<bool>,
+    /// Rounding function. Possible values: round, ceil, floor.
+    pub rounding_function: Option<String>,
+    /// Number of decimal places for rounding.
+    pub rounding_precision: Option<i32>,
+    /// Expression used to calculate event units.
+    pub expression: Option<String>,
+    /// The property to aggregate on.
+    pub field_name: Option<String>,
+    /// Weighted interval for weighted_sum_agg. Possible values: seconds.
+    pub weighted_interval: Option<String>,
+    /// Filters for differentiated pricing.
     pub filters: Option<Vec<BillableMetricFilterInput>>,
 }
 
@@ -223,6 +249,88 @@ impl BillableMetricService {
             }
             Err(e) => {
                 let error_message = format!("Failed to create billable metric: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn update_billable_metric(
+        &self,
+        Parameters(args): Parameters<UpdateBillableMetricArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let mut input = UpdateBillableMetricInput::new();
+
+        if let Some(name) = args.name {
+            input = input.with_name(name);
+        }
+        if let Some(new_code) = args.new_code {
+            input = input.with_code(new_code);
+        }
+        if let Some(description) = args.description {
+            input = input.with_description(description);
+        }
+        if let Some(recurring) = args.recurring {
+            input = input.with_recurring(recurring);
+        }
+        if let Some(rounding_function_str) = args.rounding_function {
+            match rounding_function_str.parse::<BillableMetricRoundingFunction>() {
+                Ok(rounding_function) => {
+                    input = input.with_rounding_function(rounding_function);
+                }
+                Err(_) => {
+                    return Ok(error_result(format!(
+                        "Invalid rounding_function: {rounding_function_str}. Valid values are: round, ceil, floor"
+                    )));
+                }
+            }
+        }
+        if let Some(rounding_precision) = args.rounding_precision {
+            input = input.with_rounding_precision(rounding_precision);
+        }
+        if let Some(expression) = args.expression {
+            input = input.with_expression(expression);
+        }
+        if let Some(field_name) = args.field_name {
+            input = input.with_field_name(field_name);
+        }
+        if let Some(weighted_interval_str) = args.weighted_interval {
+            match weighted_interval_str.parse::<BillableMetricWeightedInterval>() {
+                Ok(weighted_interval) => {
+                    input = input.with_weighted_interval(weighted_interval);
+                }
+                Err(_) => {
+                    return Ok(error_result(format!(
+                        "Invalid weighted_interval: {weighted_interval_str}. Valid values are: seconds"
+                    )));
+                }
+            }
+        }
+        if let Some(filters_input) = args.filters {
+            let filters: Vec<BillableMetricFilterModel> = filters_input
+                .into_iter()
+                .map(|f| BillableMetricFilterModel::new(f.key, f.values))
+                .collect();
+            input = input.with_filters(filters);
+        }
+
+        let request = UpdateBillableMetricRequest::new(args.code, input);
+
+        match client.update_billable_metric(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "billable_metric": response.billable_metric,
+                });
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to update billable metric: {e}");
                 tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
