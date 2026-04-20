@@ -1,7 +1,6 @@
 use anyhow::Result;
 use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use lago_types::{
     filters::billable_metric::BillableMetricFilter,
@@ -11,11 +10,11 @@ use lago_types::{
     },
     requests::billable_metric::{
         CreateBillableMetricInput, CreateBillableMetricRequest, GetBillableMetricRequest,
-        ListBillableMetricsRequest,
+        ListBillableMetricsRequest, UpdateBillableMetricInput, UpdateBillableMetricRequest,
     },
 };
 
-use crate::tools::{create_lago_client, error_result, get_lago_api_config, success_result};
+use crate::tools::{create_lago_client, error_result, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ListBillableMetricsArgs {
@@ -78,15 +77,11 @@ pub struct BillableMetricFilterInput {
 }
 
 #[derive(Clone)]
-pub struct BillableMetricService {
-    http_client: reqwest::Client,
-}
+pub struct BillableMetricService;
 
 impl BillableMetricService {
     pub fn new() -> Self {
-        Self {
-            http_client: reqwest::Client::new(),
-        }
+        Self
     }
 
     #[allow(clippy::collapsible_if)]
@@ -265,127 +260,78 @@ impl BillableMetricService {
         Parameters(args): Parameters<UpdateBillableMetricArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
-        let config = match get_lago_api_config(&context).await {
-            Ok(config) => config,
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
             Err(error_result) => return Ok(error_result),
         };
 
-        let mut body = serde_json::Map::new();
+        let mut input = UpdateBillableMetricInput::new();
 
         if let Some(name) = args.name {
-            body.insert("name".into(), Value::String(name));
+            input = input.with_name(name);
         }
         if let Some(new_code) = args.new_code {
-            body.insert("code".into(), Value::String(new_code));
+            input = input.with_code(new_code);
         }
         if let Some(description) = args.description {
-            body.insert("description".into(), Value::String(description));
+            input = input.with_description(description);
         }
         if let Some(recurring) = args.recurring {
-            body.insert("recurring".into(), Value::Bool(recurring));
+            input = input.with_recurring(recurring);
         }
         if let Some(rounding_function_str) = args.rounding_function {
-            if rounding_function_str
-                .parse::<BillableMetricRoundingFunction>()
-                .is_err()
-            {
-                return Ok(error_result(format!(
-                    "Invalid rounding_function: {rounding_function_str}. Valid values are: round, ceil, floor"
-                )));
-            }
-            body.insert(
-                "rounding_function".into(),
-                Value::String(rounding_function_str),
-            );
-        }
-        if let Some(rounding_precision) = args.rounding_precision {
-            body.insert(
-                "rounding_precision".into(),
-                Value::Number(rounding_precision.into()),
-            );
-        }
-        if let Some(expression) = args.expression {
-            body.insert("expression".into(), Value::String(expression));
-        }
-        if let Some(field_name) = args.field_name {
-            body.insert("field_name".into(), Value::String(field_name));
-        }
-        if let Some(weighted_interval_str) = args.weighted_interval {
-            if weighted_interval_str
-                .parse::<BillableMetricWeightedInterval>()
-                .is_err()
-            {
-                return Ok(error_result(format!(
-                    "Invalid weighted_interval: {weighted_interval_str}. Valid values are: seconds"
-                )));
-            }
-            body.insert(
-                "weighted_interval".into(),
-                Value::String(weighted_interval_str),
-            );
-        }
-        if let Some(filters_input) = args.filters {
-            let filters_json: Vec<Value> = filters_input
-                .into_iter()
-                .map(|f| {
-                    serde_json::json!({
-                        "key": f.key,
-                        "values": f.values,
-                    })
-                })
-                .collect();
-            body.insert("filters".into(), Value::Array(filters_json));
-        }
-
-        let payload = serde_json::json!({ "billable_metric": Value::Object(body) });
-
-        let encoded_code = urlencoding::encode(&args.code);
-        let url = format!("{}/billable_metrics/{}", config.base_url, encoded_code);
-
-        match self
-            .http_client
-            .put(&url)
-            .bearer_auth(&config.api_key)
-            .json(&payload)
-            .send()
-            .await
-        {
-            Ok(response) if response.status().is_success() => {
-                match response.json::<Value>().await {
-                    Ok(json) => Ok(success_result(&json)),
-                    Err(e) => {
-                        let error_message =
-                            format!("Failed to parse update billable metric response: {e}");
-                        tracing::error!(
-                            code = %args.code,
-                            error = %e,
-                            "{error_message}"
-                        );
-                        Ok(error_result(error_message))
-                    }
+            match rounding_function_str.parse::<BillableMetricRoundingFunction>() {
+                Ok(rounding_function) => {
+                    input = input.with_rounding_function(rounding_function);
+                }
+                Err(_) => {
+                    return Ok(error_result(format!(
+                        "Invalid rounding_function: {rounding_function_str}. Valid values are: round, ceil, floor"
+                    )));
                 }
             }
+        }
+        if let Some(rounding_precision) = args.rounding_precision {
+            input = input.with_rounding_precision(rounding_precision);
+        }
+        if let Some(expression) = args.expression {
+            input = input.with_expression(expression);
+        }
+        if let Some(field_name) = args.field_name {
+            input = input.with_field_name(field_name);
+        }
+        if let Some(weighted_interval_str) = args.weighted_interval {
+            match weighted_interval_str.parse::<BillableMetricWeightedInterval>() {
+                Ok(weighted_interval) => {
+                    input = input.with_weighted_interval(weighted_interval);
+                }
+                Err(_) => {
+                    return Ok(error_result(format!(
+                        "Invalid weighted_interval: {weighted_interval_str}. Valid values are: seconds"
+                    )));
+                }
+            }
+        }
+        if let Some(filters_input) = args.filters {
+            let filters: Vec<BillableMetricFilterModel> = filters_input
+                .into_iter()
+                .map(|f| BillableMetricFilterModel::new(f.key, f.values))
+                .collect();
+            input = input.with_filters(filters);
+        }
+
+        let request = UpdateBillableMetricRequest::new(args.code, input);
+
+        match client.update_billable_metric(request).await {
             Ok(response) => {
-                let status = response.status();
-                let body = response
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| "Unknown error".to_string());
-                let error_message =
-                    format!("Failed to update billable metric (HTTP {status}): {body}");
-                tracing::error!(
-                    code = %args.code,
-                    "{error_message}"
-                );
-                Ok(error_result(error_message))
+                let result = serde_json::json!({
+                    "billable_metric": response.billable_metric,
+                });
+                Ok(success_result(&result))
             }
             Err(e) => {
                 let error_message = format!("Failed to update billable metric: {e}");
-                tracing::error!(
-                    code = %args.code,
-                    error = %e,
-                    "{error_message}"
-                );
+                tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
         }
