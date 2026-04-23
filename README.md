@@ -1,30 +1,34 @@
 # Lago Agent Toolkit
 
-**Bringing agentic superpowers to Lago** 🚀
+MCP server and agent tools for Lago. Lets AI agents read and write billing data in Lago — invoices, events, customers, payments, credit notes, coupons — via the Model Context Protocol.
 
-This repository contains tools and integrations that enable AI agents to interact with the Lago billing platform, making it easier than ever to build intelligent billing workflows and automations.
+Works with Claude Desktop today.
 
-## What's Inside
+## What's inside
 
-This toolkit currently includes:
+An MCP (Model Context Protocol) server written in Rust, distributed as a Docker image. It bridges AI agents and Lago's billing API.
 
-### 🤖 MCP Server (`/mcp`)
-A **Model Context Protocol (MCP) server** written in Rust that provides AI assistants (like Claude) with direct access to Lago's billing data. The server acts as a bridge between AI models and the Lago API, enabling natural language queries about invoices, customers, and billing information.
+**Features:**
+- Full access to Lago's billing primitives as 40 MCP tools
+- Type-safe Rust implementation
+- Multi-architecture Docker image (AMD64 & ARM64)
+- Pagination support for large datasets
+- Filter invoices, customers, payments, events with rich query parameters
 
-**Key Features:**
-- 📋 **Invoice Management**: Query and retrieve invoice data with smart filtering
-- 🔍 **Advanced Search**: Filter by customer, date ranges, status, payment status, and invoice type
-- 📄 **Pagination Support**: Handle large datasets efficiently
-- 🛡️ **Type Safety**: Fully typed implementation in Rust
-- 🐋 **Docker Ready**: Multi-architecture support (AMD64 & ARM64)
+## The Managed Agents context
 
-## Quick Start with Claude Desktop
+Anthropic launched Claude Managed Agents on April 8, 2026. As of that release, two observable constraints in Anthropic's Admin API:
 
-The easiest way to get started is using the pre-built Docker image with Claude Desktop:
+- The Usage Report API's `group_by` parameter accepts 7 values: `api_key_id`, `workspace_id`, `model`, `service_tier`, `context_window`, `inference_geo`, `speed`. `agent_id` and `session_id` are not among them.
+- Session creation accepts `agent`, `environment_id`, and `vault_ids`. No `customer_id`, `metadata`, or `external_id`.
 
-### 1. Configure Claude Desktop
+For operators deploying Managed Agents to their own customers and needing per-session or per-customer attribution to bill those customers, the attribution data isn't exposed by Anthropic's API. The Lago Agent Toolkit surfaces Lago's billing primitives via MCP so that layer can be built on Lago rather than hand-rolled.
 
-Add this configuration to your Claude Desktop MCP settings:
+## Quick start (Claude Desktop)
+
+1. Install Docker Desktop
+2. Open Claude Desktop → Settings → Developer → Edit Config
+3. Add the Lago MCP server:
 
 ```json
 {
@@ -45,19 +49,18 @@ Add this configuration to your Claude Desktop MCP settings:
 }
 ```
 
-### 2. Set Your Credentials
+4. Replace `your_lago_api_key` with your actual Lago API key (find it in your Lago dashboard under API settings).
+5. Restart Claude Desktop. The agent can now call Lago.
 
-Replace `your_lago_api_key` with your actual Lago API key. You can find this in your Lago dashboard under API settings.
+For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 
-Replace `your_mistral_agent_id` and `your_mistral_api_key` with your actual Mistral API credentials.
+## Example prompts
 
-### 3. Start Chatting!
-
-Once configured, you can ask Claude natural language questions about your billing data:
-
-- *"Show me all pending invoices from last month"*
-- *"Find all failed payment invoices"*
-- *"Give me the total amount of overdue invoices for the month of March 2025"*
+- *"Show me all pending invoices from last month"* → `list_invoices`
+- *"Find all failed payment invoices"* → `list_invoices`
+- *"Give me the total amount of overdue invoices for March 2025"* → `list_invoices` + agent aggregation
+- *"Preview an invoice for customer X with 500 additional API-call events"* → `preview_invoice`
+- *"Retry payment on invoice INV-123"* → `retry_invoice_payment`
 
 ## Available Tools
 
@@ -123,7 +126,15 @@ Once configured, you can ask Claude natural language questions about your billin
 
 ## Contributing
 
-We welcome contributions! Whether it's adding new tools, improving existing functionality, or enhancing documentation, your help makes this toolkit better for everyone.
+Issues and PRs welcome.
+
+## About Lago
+
+Lago is the open-source billing platform for AI-native companies. Real-time metering, programmatic invoicing, self-hostable. Used in production by PayPal, Mistral AI, Groq, Synthesia, and Laravel. AI-infrastructure companies such as CoreWeave also run Lago.
+
+- Docs: [docs.getlago.com](https://docs.getlago.com)
+- Cloud: [getlago.com](https://getlago.com)
+- Community: [Slack](https://getlago.com/slack)
 
 ## License
 
