@@ -30,3 +30,12 @@ urlencoding = "2.1"
 clap = { version = "4.5", features = ["derive"] }
 tokio-util = "0.7"
 axum = { version = "0.8", features = ["macros"] }
+
+# LOCAL DEV ONLY — DO NOT COMMIT before opening PR.
+# Redirects lago-types and lago-client to a local checkout of getlago/lago-rust-client
+# so we can build the MCP fee tools against the unreleased SDK methods. Remove this
+# block and bump the version pins above to the published 0.1.22 / 0.1.24 once the
+# upstream PRs land on crates.io.
+[patch.crates-io]
+lago-types = { path = "../../lago-rust-client/lago-types" }
+lago-client = { path = "../../lago-rust-client/lago-client" }
