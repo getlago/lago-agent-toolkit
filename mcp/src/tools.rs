@@ -7,6 +7,7 @@ pub mod credit_note;
 pub mod customer;
 pub mod customer_usage;
 pub mod event;
+pub mod fee;
 pub mod invoice;
 pub mod payment;
 pub mod plan;
