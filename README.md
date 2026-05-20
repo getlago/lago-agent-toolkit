@@ -78,6 +78,10 @@ For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 - **`retry_invoice_payment`**: Retry payment collection for an invoice
 - **`void_invoice`**: Void a finalized invoice to prevent further modifications or payments
 
+### Fees
+- **`list_fees`**: List fees with filtering by fee type, billable metric code, customer, subscription, currency, payment status, and date range. Useful for custom revenue reporting and MRR calculations that need to include selected usage charges (e.g., seats, storage) alongside subscription fees.
+- **`get_fee`**: Retrieve a specific fee by its Lago ID
+
 ### Customers
 - **`get_customer`**: Retrieve a customer by external ID
 - **`list_customers`**: List customers with optional filtering

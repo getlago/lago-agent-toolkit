@@ -17,6 +17,7 @@ use crate::tools::credit_note::CreditNoteService;
 use crate::tools::customer::CustomerService;
 use crate::tools::customer_usage::CustomerUsageService;
 use crate::tools::event::EventService;
+use crate::tools::fee::FeeService;
 use crate::tools::invoice::InvoiceService;
 use crate::tools::payment::PaymentService;
 use crate::tools::plan::PlanService;
@@ -36,6 +37,7 @@ pub struct LagoMcpServer {
     coupon_service: CouponService,
     credit_note_service: CreditNoteService,
     event_service: EventService,
+    fee_service: FeeService,
     payment_service: PaymentService,
     plan_service: PlanService,
     tool_router: ToolRouter<Self>,
@@ -55,6 +57,7 @@ impl LagoMcpServer {
         let coupon_service = CouponService::new();
         let credit_note_service = CreditNoteService::new();
         let event_service = EventService::new();
+        let fee_service = FeeService::new();
         let payment_service = PaymentService::new();
         let plan_service = PlanService::new();
 
@@ -70,6 +73,7 @@ impl LagoMcpServer {
             coupon_service,
             credit_note_service,
             event_service,
+            fee_service,
             payment_service,
             plan_service,
             tool_router: Self::tool_router(),
@@ -229,6 +233,32 @@ impl LagoMcpServer {
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.invoice_service.void_invoice(parameters, context).await
+    }
+
+    #[tool(
+        description = "List fees from Lago with optional filtering by fee type, billable metric code, customer, subscription, currency, payment status, and date range. \
+            Use this to access fee-level data for custom revenue and MRR reporting that needs more granularity than invoice totals. \
+            For MRR calculations that include selected usage charges (e.g., seats, storage) alongside subscription fees, \
+            filter by `billable_metric_code` to isolate the relevant usage fees, or by `fee_type='subscription'` for recurring base fees only. \
+            Use `created_at_from` / `created_at_to` to scope to a billing period."
+    )]
+    pub async fn list_fees(
+        &self,
+        parameters: Parameters<crate::tools::fee::ListFeesArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.fee_service.list_fees(parameters, context).await
+    }
+
+    #[tool(
+        description = "Get a specific fee by its Lago ID (UUID). Returns detailed fee information including amount, fee type, associated billable metric (if any), customer, subscription, and payment status."
+    )]
+    pub async fn get_fee(
+        &self,
+        parameters: Parameters<crate::tools::fee::GetFeeArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.fee_service.get_fee(parameters, context).await
     }
 
     #[tool(description = "Get a specific customer by their external ID")]
