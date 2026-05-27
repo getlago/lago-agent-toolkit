@@ -50,9 +50,9 @@ Goal: add the Rust data shapes the new tool consumes — filters, request, respo
 
 **Steps**:
 
-1. Branch from `main`:
+1. In your `lago-rust-client` checkout, branch from `main`:
    ```bash
-   cd ~/Documents/GitHub/lago-rust-client
+   cd <path/to/lago-rust-client>
    git checkout main && git pull
    git checkout -b feat/<resource>-types
    ```
@@ -134,9 +134,9 @@ Goal: implement the actual `LagoClient::list_widgets` / `LagoClient::get_widget`
 
 **Steps**:
 
-1. Branch from updated `main`:
+1. Back in your `lago-rust-client` checkout, branch from updated `main`:
    ```bash
-   cd ~/Documents/GitHub/lago-rust-client
+   cd <path/to/lago-rust-client>
    git checkout main && git pull
    git checkout -b feat/<resource>-client
    ```
@@ -199,9 +199,9 @@ Goal: wire the SDK methods into the MCP server as named tools the LLM can call.
 
 **Steps**:
 
-1. Branch from `main`:
+1. In this repo (`lago-agent-toolkit`), branch from `main`:
    ```bash
-   cd ~/Documents/GitHub/lago-agent-toolkit
+   cd <path/to/lago-agent-toolkit>
    git checkout main && git pull
    git checkout -b feat/<tool-name>-tool
    ```
@@ -255,7 +255,7 @@ Goal: wire the SDK methods into the MCP server as named tools the LLM can call.
 
 9. Smoke test by running the MCP server locally and exercising the new tool end-to-end:
    ```bash
-   cd ~/Documents/GitHub/lago-agent-toolkit/mcp
+   cd <path/to/lago-agent-toolkit>/mcp
    set -a && source ./.env.development && set +a
    cargo run -- sse --port 3000
    ```
@@ -315,7 +315,7 @@ Goal: get the new MCP server image running in staging, and teach the staging Mis
    - Ask the assistant a question that should trigger the tool — if you get `Tool '<name>' not found`, the deploy hasn't happened yet.
    - Curl the staging MCP server's `tools/list` directly (replace `<staging-mcp-url>` with the actual URL — ask whoever owns staging if you don't know it). Use the session-ID curl dance from Phase 4 step 9.
 
-3. **Mistral staging sync**. The MCP server is now serving the new tools, but the Mistral agent doesn't know about them until the schemas are pasted into its function list.
+3. **Mistral staging sync**. The MCP server is now serving the new tools, but the Mistral agent doesn't know about them until the schemas are pasted into its function list. **This sync is manual and must be redone every time the tool catalog changes** — adding a new tool, removing a tool, renaming args, changing arg types, or rewriting a description all require a re-paste of the affected function. Same applies to the production agent in Phase 6. Catalog-drift automation (a `bin/sync-mistral` script that calls Mistral's Agents API) is a known followup; today the sync is hand-managed for every change.
 
    a. Get the schema JSON from the locally-running MCP server (cleanest source). This reuses `$LAGO_API_KEY` and `$SID` from Phase 4 step 9 — if you've opened a fresh shell, re-run the `initialize` + `notifications/initialized` curls from that step to repopulate them before running the snippet below.
       ```bash

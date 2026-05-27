@@ -19,7 +19,7 @@ Trigger phrases that should make you consult this doc:
 
 Do not improvise from your training data — the cross-repo dependency chain has specific failure modes that aren't obvious without the doc.
 
-**Heads up**: Phases 1 and 3 of the runbook require a local checkout of [`getlago/lago-rust-client`](https://github.com/getlago/lago-rust-client), assumed to live at `~/Documents/GitHub/lago-rust-client/` (or a sibling path to this repo). If the user doesn't have it, ask them to clone it before starting — the `cd` commands in Phases 1 and 3 will fail otherwise.
+**Heads up**: Phases 1 and 3 of the runbook require a local checkout of [`getlago/lago-rust-client`](https://github.com/getlago/lago-rust-client). If the user doesn't have it cloned anywhere, ask them to clone it before starting and confirm the path you'll use in the workflow.
 
 ## Repository layout
 
@@ -35,6 +35,19 @@ Do not improvise from your training data — the cross-repo dependency chain has
 - **`getlago/lago-rust-client`** — Rust SDK with two published crates: `lago-types` (data shapes) and `lago-client` (HTTP client). This MCP server depends on both. Independent versioning on crates.io.
 - **`getlago/lago-api`** — Ruby orchestration layer that wraps Mistral's Conversations API + this MCP server for the Lago AI Assistant. Manages `AiConversation` records, streams responses via GraphQL subscriptions, and proxies tool calls to MCP. See `app/services/ai_conversations/stream_service.rb` and `lib/lago_mcp_client/`.
 - **Mistral agent console** (https://console.mistral.ai/) — agent configuration including function schemas, system prompt, and model settings. Schemas are pasted by hand from this MCP server's `tools/list` response. Two agents: production (`Lago Billing Assistant`) and staging (`Lago Billing Assistant Staging`).
+
+## Security model (load-bearing — read before suggesting any tool)
+
+Every MCP tool routes through the Lago Rails API via the `X-LAGO-API-KEY` header forwarded on each call. Rails performs both auth (validates the key) and **org scoping** (the key identifies which tenant's data is accessible). This is the **only** trust boundary — the MCP server itself does not enforce org isolation.
+
+When designing or reviewing a new tool, this means:
+
+- **Don't add tools that talk directly to Postgres** or any storage layer that bypasses the Rails API. All data access must go through `lago-client` → Rails.
+- **Don't accept a client-supplied org/tenant/customer ID as an authoritative identifier.** Rails infers the org from the API key — any org/tenant identifier in a tool's args should be treated as a filter or selector *within* the caller's org, never as cross-org access.
+- **Don't forward the API key anywhere except Rails.** No third-party services, no logging it, no embedding it in tool responses.
+- **Don't introduce tool-level capability checks** (e.g., "is this user allowed to void?") as a substitute for Rails-side permissions. If Rails allows the call, the tool allows the call. If you want finer-grained gating, that belongs upstream in Rails, not in the MCP server.
+
+If a proposed tool would violate any of these, stop and raise it with the team before writing code.
 
 ## Conventions worth knowing
 
