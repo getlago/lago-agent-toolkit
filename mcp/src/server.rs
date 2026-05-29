@@ -22,6 +22,7 @@ use crate::tools::invoice::InvoiceService;
 use crate::tools::payment::PaymentService;
 use crate::tools::plan::PlanService;
 use crate::tools::subscription::SubscriptionService;
+use crate::tools::wallet::WalletService;
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -40,6 +41,7 @@ pub struct LagoMcpServer {
     fee_service: FeeService,
     payment_service: PaymentService,
     plan_service: PlanService,
+    wallet_service: WalletService,
     tool_router: ToolRouter<Self>,
 }
 
@@ -60,6 +62,7 @@ impl LagoMcpServer {
         let fee_service = FeeService::new();
         let payment_service = PaymentService::new();
         let plan_service = PlanService::new();
+        let wallet_service = WalletService::new();
 
         Self {
             invoice_service,
@@ -76,6 +79,7 @@ impl LagoMcpServer {
             fee_service,
             payment_service,
             plan_service,
+            wallet_service,
             tool_router: Self::tool_router(),
         }
     }
@@ -236,11 +240,11 @@ impl LagoMcpServer {
     }
 
     #[tool(
-        description = "List fees from Lago with optional filtering by fee type, billable metric code, customer, subscription, currency, payment status, and date range. \
+        description = "List fees from Lago with optional filtering by fee type, billable metric code, customer, subscription, currency, payment status, event transaction ID, and date range. \
             Use this to access fee-level data for custom revenue and MRR reporting that needs more granularity than invoice totals. \
             For MRR calculations that include selected usage charges (e.g., seats, storage) alongside subscription fees, \
             filter by `billable_metric_code` to isolate the relevant usage fees, or by `fee_type='subscription'` for recurring base fees only. \
-            Use `created_at_from` / `created_at_to` to scope to a billing period."
+            Use `event_transaction_id` to trace pay-in-advance events to rated fees, and `created_at_*`, `succeeded_at_*`, `failed_at_*`, or `refunded_at_*` to scope to a billing period."
     )]
     pub async fn list_fees(
         &self,
@@ -259,6 +263,80 @@ impl LagoMcpServer {
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.fee_service.get_fee(parameters, context).await
+    }
+
+    #[tool(
+        description = "List wallets from Lago with optional filtering by customer, currency, and billing entity. Use this for finance reconciliation, wallet balance rollforwards, and finding the Lago wallet IDs needed to inspect credit inflows and outflows."
+    )]
+    pub async fn list_wallets(
+        &self,
+        parameters: Parameters<crate::tools::wallet::ListWalletsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.wallet_service.list_wallets(parameters, context).await
+    }
+
+    #[tool(
+        description = "Get a specific wallet by its Lago ID (UUID). Returns balances, consumed credits, currency, status, limitations, recurring rules, and related customer information."
+    )]
+    pub async fn get_wallet(
+        &self,
+        parameters: Parameters<crate::tools::wallet::GetWalletArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.wallet_service.get_wallet(parameters, context).await
+    }
+
+    #[tool(
+        description = "List wallet transactions for a wallet. Use transaction_type='inbound' for credits in and transaction_type='outbound' for credits consumed; combine with transaction_status to separate purchased, granted, voided, and invoiced credit movements."
+    )]
+    pub async fn list_wallet_transactions(
+        &self,
+        parameters: Parameters<crate::tools::wallet::ListWalletTransactionsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.wallet_service
+            .list_wallet_transactions(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Get a specific wallet transaction by its Lago ID (UUID). Useful for inspecting the invoice, credit note, voided invoice, amount, credit amount, remaining amount, and metadata behind a credit movement."
+    )]
+    pub async fn get_wallet_transaction(
+        &self,
+        parameters: Parameters<crate::tools::wallet::GetWalletTransactionArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.wallet_service
+            .get_wallet_transaction(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "For a traceable inbound wallet transaction, list the outbound invoice transactions that consumed it. Use this to explain which invoices used a specific top-up or grant."
+    )]
+    pub async fn list_wallet_transaction_consumptions(
+        &self,
+        parameters: Parameters<crate::tools::wallet::ListWalletTransactionLinksArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.wallet_service
+            .list_wallet_transaction_consumptions(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "For a traceable outbound wallet transaction, list the inbound credits that funded it. Use this to explain which top-ups or grants paid for a specific invoice credit application."
+    )]
+    pub async fn list_wallet_transaction_fundings(
+        &self,
+        parameters: Parameters<crate::tools::wallet::ListWalletTransactionLinksArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.wallet_service
+            .list_wallet_transaction_fundings(parameters, context)
+            .await
     }
 
     #[tool(description = "Get a specific customer by their external ID")]
@@ -582,6 +660,19 @@ impl LagoMcpServer {
     }
 
     #[tool(
+        description = "List enriched usage events from Lago with optional filtering by subscription, billable metric code, and timestamp range. Use this for reconciliation when you need the post-enrichment value, decimal value, precise amount, and properties that fed usage and fee calculation. Requires the organization to use Lago's ClickHouse events store."
+    )]
+    pub async fn list_enriched_events(
+        &self,
+        parameters: Parameters<crate::tools::event::ListEventsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.event_service
+            .list_enriched_events(parameters, context)
+            .await
+    }
+
+    #[tool(
         description = "List credit notes from Lago with optional filtering by customer, dates, reason, status, and amount range"
     )]
     pub async fn list_credit_notes(
@@ -736,7 +827,7 @@ impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             instructions: Some(
-                "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, payments, activity logs, API logs, events, and other Lago resources. Use the available tools to interact with the Lago API.".into()
+                "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, payments, activity logs, API logs, events, wallets, fees, and other Lago resources. Use the available tools to interact with the Lago API and build billing reconciliation reports.".into()
             ),
             capabilities: ServerCapabilities::builder()
                 .enable_tools()

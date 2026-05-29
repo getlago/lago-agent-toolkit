@@ -12,6 +12,7 @@ pub mod invoice;
 pub mod payment;
 pub mod plan;
 pub mod subscription;
+pub mod wallet;
 
 use lago_client::{
     Config, Credentials, EnvironmentRegionProvider, LagoClient, Region, RegionProvider,

@@ -263,4 +263,86 @@ impl EventService {
             }
         }
     }
+
+    pub async fn list_enriched_events(
+        &self,
+        Parameters(args): Parameters<ListEventsArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let config = match get_lago_api_config(&context).await {
+            Ok(config) => config,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let params = build_event_list_params(args);
+        let url = format!("{}/events_enriched", config.base_url);
+
+        match self
+            .http_client
+            .get(&url)
+            .bearer_auth(&config.api_key)
+            .query(&params)
+            .send()
+            .await
+        {
+            Ok(response) if response.status().is_success() => {
+                match response.json::<Value>().await {
+                    Ok(json) => Ok(success_result(&json)),
+                    Err(e) => {
+                        let error_message =
+                            format!("Failed to parse enriched events response: {e}");
+                        tracing::error!("{error_message}");
+                        Ok(error_result(error_message))
+                    }
+                }
+            }
+            Ok(response) => {
+                let status = response.status();
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                let error_message =
+                    format!("Failed to list enriched events (HTTP {status}): {body}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to list enriched events: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+}
+
+fn build_event_list_params(args: ListEventsArgs) -> Vec<(&'static str, String)> {
+    let mut params: Vec<(&'static str, String)> = Vec::new();
+
+    if let Some(page) = args.page {
+        params.push(("page", page.to_string()));
+    }
+    if let Some(per_page) = args.per_page {
+        params.push(("per_page", per_page.to_string()));
+    }
+    if let Some(external_subscription_id) = args.external_subscription_id {
+        params.push(("external_subscription_id", external_subscription_id));
+    }
+    if let Some(code) = args.code {
+        params.push(("code", code));
+    }
+    if let Some(timestamp_from_started_at) = args.timestamp_from_started_at {
+        params.push((
+            "timestamp_from_started_at",
+            timestamp_from_started_at.to_string(),
+        ));
+    }
+    if let Some(timestamp_from) = args.timestamp_from {
+        params.push(("timestamp_from", timestamp_from));
+    }
+    if let Some(timestamp_to) = args.timestamp_to {
+        params.push(("timestamp_to", timestamp_to));
+    }
+
+    params
 }

@@ -20,7 +20,10 @@ The Model Context Protocol (MCP) is a standardized way for AI assistants to inte
 - **API Log Management**: Query API logs to monitor API requests and responses
 - **Applied Coupon Management**: Apply coupons to customers and list applied coupons
 - **Event Management**: Send and retrieve usage events for billing
-- **Filtering Support**: Filter invoices, customers, subscriptions, plans, billable metrics, logs, and applied coupons by various criteria
+- **Enriched Event Reconciliation**: Retrieve enriched events with calculated values used in fee and invoice generation
+- **Fee Reporting**: Filter fee-level revenue by customer, subscription, billable metric, event transaction, payment status, and lifecycle dates
+- **Wallet Reconciliation**: List wallets and wallet transactions to explain credits in, credits out, voids, invoice consumption, and balance rollforwards
+- **Filtering Support**: Filter invoices, customers, subscriptions, plans, billable metrics, logs, fees, wallets, wallet transactions, and applied coupons by various criteria
 - **Pagination**: Handle large result sets with built-in pagination
 - **Type Safety**: Fully typed requests and responses using Rust
 - **Multi-tenant Support**: Per-request client creation for handling multiple tenants
@@ -536,9 +539,35 @@ List all usage events from Lago with optional filtering by subscription, billabl
 }
 ```
 
+#### 24. `list_enriched_events`
+List enriched usage events with the post-enrichment values used for reconciliation and rating. This is useful when you need to show raw event -> enriched event -> usage -> fee -> invoice math.
+
+**Parameters:** same as `list_events`.
+
+**Note:** This endpoint requires the organization to use Lago's ClickHouse events store.
+
+### Fee and Wallet Reporting Tools
+
+#### `list_fees`
+List fee-level revenue with optional filtering by fee type, billable metric code, customer, subscription, currency, event transaction ID, payment status, and created/succeeded/failed/refunded date ranges.
+
+Use this for customer-level revenue exports, MRR views that include selected usage charges, one-off/add-on breakdowns, and event-to-fee tracing.
+
+#### `list_wallets`
+List wallets by customer, currency, billing entity, and pagination. Use this to get wallet IDs, balances, consumed credits, and current credit balances before a rollforward.
+
+#### `list_wallet_transactions`
+List wallet credit movements for a wallet. Use `transaction_type='inbound'` for credits in and `transaction_type='outbound'` for credits consumed. Use `transaction_status` to separate purchased, granted/free, voided, and invoiced movements.
+
+#### `list_wallet_transaction_consumptions`
+For a traceable inbound wallet transaction, list the outbound invoice transactions that consumed it.
+
+#### `list_wallet_transaction_fundings`
+For a traceable outbound wallet transaction, list the inbound credits that funded it.
+
 ### Applied Coupon Tools
 
-#### 24. `list_applied_coupons`
+#### 25. `list_applied_coupons`
 List applied coupons with optional filtering and pagination.
 
 **Parameters:**
@@ -1369,9 +1398,11 @@ mcp/
 │   │   ├── customer.rs        # Customer-related tools
 │   │   ├── customer_usage.rs  # Customer usage-related tools
 │   │   ├── event.rs           # Event-related tools
+│   │   ├── fee.rs             # Fee reporting tools
 │   │   ├── invoice.rs         # Invoice-related tools
 │   │   ├── plan.rs            # Plan-related tools
-│   │   └── subscription.rs    # Subscription-related tools
+│   │   ├── subscription.rs    # Subscription-related tools
+│   │   └── wallet.rs          # Wallet reconciliation tools
 │   └── tools.rs         # Shared utilities and client creation
 ├── Cargo.toml           # Rust dependencies
 └── Dockerfile           # Docker configuration
