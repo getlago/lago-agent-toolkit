@@ -19,10 +19,6 @@
 // transport (direct reqwest to a first-party analytics service) differs from the
 // rest of the crate.
 
-// the service is constructed and called from server.rs once the tool is registered
-// (next task); until then these items are unreferenced outside the test module.
-#![allow(dead_code)]
-
 use rmcp::{
     RoleServer,
     handler::server::tool::Parameters,
@@ -285,5 +281,28 @@ mod tests {
 
         let error = result.expect_err("expected Err(CallToolResult) on non-2xx");
         assert_eq!(error.is_error, Some(true));
+    }
+
+    #[tokio::test]
+    async fn call_agent_returns_error_result_on_malformed_body() {
+        // a 200 with a body that isn't a valid AgentAskResponse must surface as an
+        // error CallToolResult, not panic or silently succeed
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/ask"))
+            .respond_with(ResponseTemplate::new(200).set_body_string("not json at all"))
+            .mount(&server)
+            .await;
+
+        let client = reqwest::Client::new();
+        let body = AgentAskRequest {
+            question: "q".to_string(),
+            session_id: None,
+        };
+        let result = call_agent(&client, &server.uri(), "k", &body).await;
+
+        assert!(result.is_err());
+        let ctr = result.unwrap_err();
+        assert_eq!(ctr.is_error, Some(true));
     }
 }
