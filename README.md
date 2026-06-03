@@ -9,11 +9,12 @@ Works with Claude Desktop today.
 An MCP (Model Context Protocol) server written in Rust, distributed as a Docker image. It bridges AI agents and Lago's billing API.
 
 **Features:**
-- Full access to Lago's billing primitives as 40 MCP tools
+- Full access to Lago's billing primitives as 62 MCP tools
 - Type-safe Rust implementation
 - Multi-architecture Docker image (AMD64 & ARM64)
 - Pagination support for large datasets
-- Filter invoices, customers, payments, events with rich query parameters
+- Filter invoices, customers, payments, fees, wallets, wallet transactions, and events with rich query parameters
+- Finance-grade reconciliation helpers for customer-level revenue, wallet credit rollforwards, one-off invoice breakdowns, and event-to-fee tracing
 
 ## The Managed Agents context
 
@@ -61,6 +62,9 @@ For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 - *"Give me the total amount of overdue invoices for March 2025"* → `list_invoices` + agent aggregation
 - *"Preview an invoice for customer X with 500 additional API-call events"* → `preview_invoice`
 - *"Retry payment on invoice INV-123"* → `retry_invoice_payment`
+- *"Show customer-level usage revenue and one-off invoices for March"* → `list_fees` + `list_invoices`
+- *"Reconcile credits in, credits out, and wallet balance by customer"* → `list_wallets` + `list_wallet_transactions`
+- *"Trace this usage event into its rated fee and invoice line"* → `list_enriched_events` + `list_fees` + `get_invoice`
 
 ## Available Tools
 
@@ -79,8 +83,16 @@ For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 - **`void_invoice`**: Void a finalized invoice to prevent further modifications or payments
 
 ### Fees
-- **`list_fees`**: List fees with filtering by fee type, billable metric code, customer, subscription, currency, payment status, and date range. Useful for custom revenue reporting and MRR calculations that need to include selected usage charges (e.g., seats, storage) alongside subscription fees.
+- **`list_fees`**: List fees with filtering by fee type, billable metric code, customer, subscription, currency, event transaction ID, payment status, and created/succeeded/failed/refunded date ranges. Useful for custom revenue reporting, MRR calculations that need selected usage charges (e.g., seats, storage), and tracing pay-in-advance events into rated fee lines.
 - **`get_fee`**: Retrieve a specific fee by its Lago ID
+
+### Wallets
+- **`list_wallets`**: List wallets by customer, currency, or billing entity for wallet balances and credit rollforwards
+- **`get_wallet`**: Retrieve a specific wallet by Lago ID
+- **`list_wallet_transactions`**: List wallet credit movements by wallet, direction, processing status, and business status
+- **`get_wallet_transaction`**: Retrieve a specific wallet transaction by Lago ID
+- **`list_wallet_transaction_consumptions`**: For a traceable inbound wallet transaction, list the outbound invoice transactions that consumed it
+- **`list_wallet_transaction_fundings`**: For a traceable outbound wallet transaction, list the inbound credits that funded it
 
 ### Customers
 - **`get_customer`**: Retrieve a customer by external ID
@@ -107,6 +119,7 @@ For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 - **`get_event`**: Retrieve a usage event by transaction ID
 - **`create_event`**: Send a usage event to Lago
 - **`list_events`**: List usage events with optional filtering by subscription, code, and timestamp range
+- **`list_enriched_events`**: List enriched events with post-enrichment values, decimal values, precise amounts, and properties for event-to-invoice reconciliation
 
 ### Credit Notes
 - **`get_credit_note`**: Retrieve a specific credit note by Lago ID
