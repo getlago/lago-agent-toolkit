@@ -1,2 +1,5 @@
 /mcp/target/
 /mcp/.env.development
+
+# Rust build output
+target/

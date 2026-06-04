@@ -1,0 +1,17 @@
+# Render Blueprint for the Lago MCP server.
+# Render builds mcp/Dockerfile, which runs the Streamable HTTP server bound to 0.0.0.0:$PORT.
+# Stateless / header-passthrough: NO Lago key is set here — each request carries its own
+# X-LAGO-API-KEY + X-LAGO-API-URL headers.
+services:
+  - type: web
+    name: lago-mcp
+    runtime: docker
+    branch: deploy/render
+    rootDir: mcp
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: RUST_LOG
+        value: info
