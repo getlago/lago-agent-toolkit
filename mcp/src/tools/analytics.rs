@@ -1,4 +1,4 @@
-// APPROVED SECURITY EXCEPTION (see CLAUDE.md):
+// APPROVED SECURITY EXCEPTION:
 //
 // Every other tool in this crate reaches data through `lago-client` -> Lago Rails,
 // and the `X-LAGO-API-KEY` is only ever forwarded to Rails. This tool is an
