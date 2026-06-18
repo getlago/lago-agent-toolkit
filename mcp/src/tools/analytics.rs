@@ -123,6 +123,42 @@ async fn call_agent(
         .map_err(|e| error_result(format!("Failed to parse agent response: {e}")))
 }
 
+// We forward X-LAGO-API-KEY to the agent, so require an encrypted channel. Plaintext
+// http:// is allowed only for loopback hosts (local dev / self-hosted on the same box).
+// We deliberately do NOT pin a host allowlist: LAGO_AGENT_API_URL is operator-controlled
+// deployment config and self-hosted operators run their own analytics agent host.
+fn validate_agent_url(raw: &str) -> Result<(), String> {
+    let url = reqwest::Url::parse(raw)
+        .map_err(|e| format!("LAGO_AGENT_API_URL is not a valid URL: {e}"))?;
+
+    let host_is_loopback = matches!(
+        url.host_str(),
+        Some("localhost") | Some("127.0.0.1") | Some("::1") | Some("[::1]")
+    );
+
+    match url.scheme() {
+        "https" => Ok(()),
+        "http" if host_is_loopback => Ok(()),
+        "http" => Err(
+            "LAGO_AGENT_API_URL must use https; plaintext http is only allowed for localhost."
+                .to_string(),
+        ),
+        other => Err(format!(
+            "LAGO_AGENT_API_URL must use https, got scheme `{other}`."
+        )),
+    }
+}
+
+// Builds the agent HTTP client. Redirects are disabled so a 3xx from the agent can never
+// forward X-LAGO-API-KEY to another host (reqwest does not strip custom headers across hosts
+// on redirect). With redirects off, a redirect surfaces as a non-2xx and is handled as an error.
+fn build_agent_client(timeout_secs: u64) -> reqwest::Result<reqwest::Client> {
+    reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .timeout(Duration::from_secs(timeout_secs))
+        .build()
+}
+
 #[derive(Clone)]
 pub struct AnalyticsService;
 
@@ -151,16 +187,18 @@ impl AnalyticsService {
             ));
         }
 
+        // never forward the api key over an unencrypted channel to a non-loopback host
+        if let Err(msg) = validate_agent_url(&agent_url) {
+            return Ok(error_result(msg));
+        }
+
         // operators can tune the timeout; fall back to a sane default on unset/garbage input
         let timeout_secs = env::var("LAGO_AGENT_TIMEOUT_SECS")
             .ok()
             .and_then(|raw| raw.parse::<u64>().ok())
             .unwrap_or(DEFAULT_AGENT_TIMEOUT_SECS);
 
-        let client = match reqwest::Client::builder()
-            .timeout(Duration::from_secs(timeout_secs))
-            .build()
-        {
+        let client = match build_agent_client(timeout_secs) {
             Ok(client) => client,
             Err(e) => return Ok(error_result(format!("Failed to build HTTP client: {e}"))),
         };
@@ -304,5 +342,54 @@ mod tests {
         assert!(result.is_err());
         let ctr = result.unwrap_err();
         assert_eq!(ctr.is_error, Some(true));
+    }
+
+    #[tokio::test]
+    async fn call_agent_does_not_follow_redirects() {
+        // a 3xx from the agent must NOT be followed (reqwest would forward the custom
+        // X-LAGO-API-KEY header to the redirect target). With redirects disabled the 3xx
+        // surfaces as a non-2xx error instead. Regression guard for the key-leak fix.
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/ask"))
+            .respond_with(
+                ResponseTemplate::new(307).insert_header("location", "https://evil.example/steal"),
+            )
+            .mount(&server)
+            .await;
+
+        let client = build_agent_client(30).expect("client builds");
+        let body = AgentAskRequest {
+            question: "q".to_string(),
+            session_id: None,
+        };
+
+        let result = call_agent(&client, &server.uri(), "secret-key", &body).await;
+
+        let error = result.expect_err("redirect must be treated as an error, not followed");
+        assert_eq!(error.is_error, Some(true));
+    }
+
+    #[test]
+    fn validate_agent_url_accepts_https() {
+        assert!(validate_agent_url("https://agent.getlago.com").is_ok());
+        assert!(validate_agent_url("https://agent.getlago.com/").is_ok());
+    }
+
+    #[test]
+    fn validate_agent_url_accepts_plaintext_loopback_for_dev() {
+        assert!(validate_agent_url("http://localhost:8080").is_ok());
+        assert!(validate_agent_url("http://127.0.0.1:8080").is_ok());
+    }
+
+    #[test]
+    fn validate_agent_url_rejects_plaintext_remote() {
+        assert!(validate_agent_url("http://agent.getlago.com").is_err());
+    }
+
+    #[test]
+    fn validate_agent_url_rejects_non_http_scheme_and_garbage() {
+        assert!(validate_agent_url("ftp://agent.getlago.com").is_err());
+        assert!(validate_agent_url("not a url").is_err());
     }
 }
