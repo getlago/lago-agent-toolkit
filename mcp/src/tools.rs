@@ -1,4 +1,5 @@
 pub mod activity_log;
+pub mod analytics;
 pub mod api_log;
 pub mod applied_coupon;
 pub mod billable_metric;

@@ -42,6 +42,7 @@ For operators deploying Managed Agents to their own customers and needing per-se
         "--name", "lago-mcp-server",
         "-e", "LAGO_API_KEY=your_lago_api_key",
         "-e", "LAGO_API_URL=https://api.getlago.com/api/v1",
+        "-e", "LAGO_AGENT_API_URL=https://agent.getlago.com",
         "getlago/lago-mcp-server:latest"
       ]
     }
@@ -54,6 +55,8 @@ For operators deploying Managed Agents to their own customers and needing per-se
 
 For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 
+> **Analytics tool**: `ask_lago_analytics` additionally requires `LAGO_AGENT_API_URL` (the URL of the Lago analytics agent). If it's not set, the other tools work normally and only the analytics tool returns a configuration error. Note: this tool forwards your `X-LAGO-API-KEY` to the analytics agent service (a first-party Lago service that re-validates the key and applies the same per-organization row-level security as the Rails API). It is the one tool that does not route through the Lago REST API — see the PR description / `docs/` for the architecture rationale.
+
 ## Example prompts
 
 - *"Show me all pending invoices from last month"* → `list_invoices`
@@ -61,8 +64,14 @@ For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 - *"Give me the total amount of overdue invoices for March 2025"* → `list_invoices` + agent aggregation
 - *"Preview an invoice for customer X with 500 additional API-call events"* → `preview_invoice`
 - *"Retry payment on invoice INV-123"* → `retry_invoice_payment`
+- *"What was our MRR for December 2025, broken down by plan?"* → `ask_lago_analytics`
+- *"List the top 10 customers by usage volume in Q1 2026."* → `ask_lago_analytics`
+- *"How many invoices went overdue last month?"* then *"Break that down by customer country."* → `ask_lago_analytics` (the second call reuses the returned `session_id`)
 
 ## Available Tools
+
+### Analytics
+- **`ask_lago_analytics`**: Ask a natural-language question about your billing and usage data (revenue, MRR, invoices, customers, subscriptions, usage volumes). The analytics agent generates a read-only SQL query, runs it, and returns the SQL, a plain-language explanation, and a results table. The response includes a `session_id` — pass it back on a follow-up call to refine the same result (filter, aggregate, sort) using the agent's cached rows.
 
 ### Invoices
 - **`find_invoice_by_number`**: Find an invoice by its number (e.g., "RAF-8142-202601-312") and get its Lago ID

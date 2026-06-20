@@ -9,6 +9,7 @@ use rmcp::{
 use std::future::Future;
 
 use crate::tools::activity_log::ActivityLogService;
+use crate::tools::analytics::AnalyticsService;
 use crate::tools::api_log::ApiLogService;
 use crate::tools::applied_coupon::AppliedCouponService;
 use crate::tools::billable_metric::BillableMetricService;
@@ -32,6 +33,7 @@ pub struct LagoMcpServer {
     subscription_service: SubscriptionService,
     billable_metric_service: BillableMetricService,
     activity_log_service: ActivityLogService,
+    analytics_service: AnalyticsService,
     api_log_service: ApiLogService,
     applied_coupon_service: AppliedCouponService,
     coupon_service: CouponService,
@@ -52,6 +54,7 @@ impl LagoMcpServer {
         let subscription_service = SubscriptionService::new();
         let billable_metric_service = BillableMetricService::new();
         let activity_log_service = ActivityLogService::new();
+        let analytics_service = AnalyticsService::new();
         let api_log_service = ApiLogService::new();
         let applied_coupon_service = AppliedCouponService::new();
         let coupon_service = CouponService::new();
@@ -68,6 +71,7 @@ impl LagoMcpServer {
             subscription_service,
             billable_metric_service,
             activity_log_service,
+            analytics_service,
             api_log_service,
             applied_coupon_service,
             coupon_service,
@@ -259,6 +263,20 @@ impl LagoMcpServer {
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
         self.fee_service.get_fee(parameters, context).await
+    }
+
+    #[tool(
+        description = "Ask the Lago analytics agent a natural-language question about your billing and usage data (revenue, MRR, invoices, customers, subscriptions, usage volumes, and more). \
+            The agent generates a read-only SQL query, runs it against your analytics database, and returns the SQL, a plain-language explanation, and a results table as Markdown. \
+            Use this for ad-hoc analytical questions that don't map to a specific billing endpoint — trends, aggregations, breakdowns, and cross-entity reporting. \
+            The response embeds a `session_id` in a JSON block; to refine the same result (filter, aggregate, sort, drill down), call this tool again with that exact `session_id` plus a follow-up question, and the agent reuses the cached rows instead of re-querying."
+    )]
+    pub async fn ask_lago_analytics(
+        &self,
+        parameters: Parameters<crate::tools::analytics::AskParams>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.analytics_service.ask(parameters, context).await
     }
 
     #[tool(description = "Get a specific customer by their external ID")]
