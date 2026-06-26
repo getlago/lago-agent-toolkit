@@ -123,8 +123,13 @@ async fn call_agent(
         .map_err(|e| error_result(format!("Failed to parse agent response: {e}")))
 }
 
-// We forward X-LAGO-API-KEY to the agent, so require an encrypted channel. Plaintext
-// http:// is allowed only for loopback hosts (local dev / self-hosted on the same box).
+// We forward X-LAGO-API-KEY to the agent, so require an encrypted channel by default.
+// Plaintext http:// is allowed only where the traffic never leaves a trusted boundary:
+//   - loopback hosts (local dev / self-hosted on the same box), and
+//   - in-cluster Kubernetes service DNS (`*.svc.cluster.local`), where the call is
+//     pod-to-pod inside the cluster network — the standard service-to-service transport.
+//     The cloud deployment reaches the agent at
+//     `lago-data-agent.lago-data-agent.svc.cluster.local`, which is never publicly routable.
 // We deliberately do NOT pin a host allowlist: LAGO_AGENT_API_URL is operator-controlled
 // deployment config and self-hosted operators run their own analytics agent host.
 fn validate_agent_url(raw: &str) -> Result<(), String> {
@@ -135,12 +140,18 @@ fn validate_agent_url(raw: &str) -> Result<(), String> {
         url.host_str(),
         Some("localhost") | Some("127.0.0.1") | Some("::1") | Some("[::1]")
     );
+    // the leading dot is load-bearing: it keeps public lookalikes like
+    // `evilsvc.cluster.local` or `x.svc.cluster.local.evil.com` from matching.
+    let host_is_cluster_internal = url
+        .host_str()
+        .is_some_and(|host| host.ends_with(".svc.cluster.local"));
 
     match url.scheme() {
         "https" => Ok(()),
-        "http" if host_is_loopback => Ok(()),
+        "http" if host_is_loopback || host_is_cluster_internal => Ok(()),
         "http" => Err(
-            "LAGO_AGENT_API_URL must use https; plaintext http is only allowed for localhost."
+            "LAGO_AGENT_API_URL must use https; plaintext http is only allowed for \
+             localhost or in-cluster *.svc.cluster.local hosts."
                 .to_string(),
         ),
         other => Err(format!(
@@ -383,8 +394,21 @@ mod tests {
     }
 
     #[test]
+    fn validate_agent_url_accepts_plaintext_in_cluster_service_dns() {
+        // the cloud deployment reaches the agent over pod-to-pod cluster DNS, which is
+        // plaintext http by convention; this must be allowed or the in-cluster call fails.
+        assert!(
+            validate_agent_url("http://lago-data-agent.lago-data-agent.svc.cluster.local").is_ok()
+        );
+        assert!(validate_agent_url("http://foo.bar.svc.cluster.local:8000").is_ok());
+    }
+
+    #[test]
     fn validate_agent_url_rejects_plaintext_remote() {
         assert!(validate_agent_url("http://agent.getlago.com").is_err());
+        // lookalikes must not slip through the cluster-internal carve-out
+        assert!(validate_agent_url("http://evil.com/path.svc.cluster.local").is_err());
+        assert!(validate_agent_url("http://evilsvc.cluster.local").is_err());
     }
 
     #[test]
