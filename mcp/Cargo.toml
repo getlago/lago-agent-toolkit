@@ -1,6 +1,6 @@
 [package]
 name = "lago-mcp-server"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2024"
 
 [dependencies]
@@ -29,3 +29,6 @@ urlencoding = "2.1"
 clap = { version = "4.5", features = ["derive"] }
 tokio-util = "0.7"
 axum = { version = "0.8", features = ["macros"] }
+
+[dev-dependencies]
+wiremock = "0.6"
