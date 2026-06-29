@@ -5,8 +5,7 @@ use rmcp::{
     transport::{
         stdio,
         streamable_http_server::{
-            StreamableHttpServerConfig, StreamableHttpService,
-            session::local::LocalSessionManager,
+            StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
         },
     },
 };
