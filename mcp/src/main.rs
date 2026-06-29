@@ -63,10 +63,14 @@ async fn main() -> Result<()> {
                 port,
             );
 
+            let config = StreamableHttpServerConfig::default()
+                .with_stateful_mode(false)
+                .disable_allowed_hosts();
+
             let service = StreamableHttpService::new(
                 || Ok(LagoMcpServer::new()),
                 LocalSessionManager::default().into(),
-                StreamableHttpServerConfig::default().disable_allowed_hosts(),
+                config,
             );
 
             let router = axum::Router::new()
