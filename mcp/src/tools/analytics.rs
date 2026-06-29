@@ -21,7 +21,7 @@
 
 use rmcp::{
     RoleServer,
-    handler::server::tool::Parameters,
+    handler::server::wrapper::Parameters,
     model::{CallToolResult, Content},
     service::RequestContext,
 };

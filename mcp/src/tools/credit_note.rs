@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rmcp::{RoleServer, handler::server::tool::Parameters, model::*, service::RequestContext};
+use rmcp::{RoleServer, handler::server::wrapper::Parameters, model::*, service::RequestContext};
 use serde::{Deserialize, Serialize};
 
 use lago_types::filters::credit_note::CreditNoteFilter;

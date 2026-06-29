@@ -4,10 +4,9 @@ version = "0.2.1"
 edition = "2024"
 
 [dependencies]
-rmcp = { version = "0.6.0", features = [
+rmcp = { version = "1.7.0", features = [
     "server",
     "transport-io",
-    "transport-sse-server",
     "transport-streamable-http-server",
     "elicitation",
     "schemars",

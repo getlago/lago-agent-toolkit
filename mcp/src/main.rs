@@ -4,7 +4,9 @@ use rmcp::{
     ServiceExt,
     transport::{
         stdio,
-        streamable_http_server::{StreamableHttpService, session::local::LocalSessionManager},
+        streamable_http_server::{
+            StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
+        },
     },
 };
 use tracing_subscriber::EnvFilter;
@@ -61,10 +63,14 @@ async fn main() -> Result<()> {
                 port,
             );
 
+            let config = StreamableHttpServerConfig::default()
+                .with_stateful_mode(false)
+                .disable_allowed_hosts();
+
             let service = StreamableHttpService::new(
                 || Ok(LagoMcpServer::new()),
                 LocalSessionManager::default().into(),
-                Default::default(),
+                config,
             );
 
             let router = axum::Router::new()

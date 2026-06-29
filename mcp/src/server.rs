@@ -1,13 +1,3 @@
-use anyhow::Result;
-use rmcp::{
-    ErrorData as McpError, RoleServer, ServerHandler,
-    handler::server::{router::tool::ToolRouter, tool::Parameters},
-    model::*,
-    service::RequestContext,
-    tool, tool_handler, tool_router,
-};
-use std::future::Future;
-
 use crate::tools::activity_log::ActivityLogService;
 use crate::tools::analytics::AnalyticsService;
 use crate::tools::api_log::ApiLogService;
@@ -23,6 +13,14 @@ use crate::tools::invoice::InvoiceService;
 use crate::tools::payment::PaymentService;
 use crate::tools::plan::PlanService;
 use crate::tools::subscription::SubscriptionService;
+use anyhow::Result;
+use rmcp::{
+    ErrorData as McpError, RoleServer, ServerHandler,
+    handler::server::{router::tool::ToolRouter, wrapper::Parameters},
+    model::*,
+    service::RequestContext,
+    tool, tool_handler, tool_router,
+};
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -752,20 +750,19 @@ impl LagoMcpServer {
 #[tool_handler]
 impl ServerHandler for LagoMcpServer {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo {
-            instructions: Some(
-                "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, payments, activity logs, API logs, events, and other Lago resources. Use the available tools to interact with the Lago API.".into()
-            ),
-            capabilities: ServerCapabilities::builder()
-                .enable_tools()
-                .build(),
-            ..Default::default()
-        }
+        // `ServerInfo` (`InitializeResult`) is `#[non_exhaustive]` as of rmcp 1.x,
+        // so it can't be built with a struct literal — start from `Default` and set fields.
+        let mut info = ServerInfo::default();
+        info.instructions = Some(
+            "Lago MCP server for managing invoices, customers, customer usage, subscriptions, plans, billable metrics, coupons, applied coupons, credit notes, payments, activity logs, API logs, events, and other Lago resources. Use the available tools to interact with the Lago API.".into()
+        );
+        info.capabilities = ServerCapabilities::builder().enable_tools().build();
+        info
     }
 
     async fn initialize(
         &self,
-        _request: InitializeRequestParam,
+        _request: InitializeRequestParams,
         context: RequestContext<RoleServer>,
     ) -> Result<InitializeResult, McpError> {
         if let Some(http_request_part) = context.extensions.get::<axum::http::request::Parts>() {
