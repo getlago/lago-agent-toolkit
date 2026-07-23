@@ -15,3 +15,9 @@ services:
     envVars:
       - key: RUST_LOG
         value: info
+      # Allow per-request X-LAGO-API-URL to point at self-hosted / ngrok Lago instances
+      # (not just api.getlago.com / api.eu.getlago.com). Trade-off: this lifts the SSRF host
+      # allowlist, so the server will call whatever URL a request supplies — acceptable here
+      # because each caller also supplies its own X-LAGO-API-KEY (its own Lago).
+      - key: LAGO_ALLOW_ANY_API_URL
+        value: "true"
