@@ -297,6 +297,19 @@ impl LagoMcpServer {
     }
 
     #[tool(
+        description = "Update a customer's metadata (key/value pairs) — e.g. to persist agent state on a customer. Send the FULL desired metadata set: include an existing item's `id` to keep or update it, omit `id` to create a new key, and any existing item you leave out is DELETED. Call get_customer first to read each item's id. Re-sending an existing key WITHOUT its id fails."
+    )]
+    pub async fn update_customer_metadata(
+        &self,
+        parameters: Parameters<crate::tools::customer::UpdateCustomerMetadataArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.customer_service
+            .update_customer_metadata(parameters, context)
+            .await
+    }
+
+    #[tool(
         description = "Get the current usage for a customer's subscription. This endpoint retrieves the usage-based billing data for a customer within the current billing period."
     )]
     pub async fn get_customer_current_usage(

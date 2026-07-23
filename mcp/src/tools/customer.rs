@@ -10,7 +10,7 @@ use lago_types::{
     },
 };
 
-use crate::tools::{create_lago_client, error_result, success_result};
+use crate::tools::{create_lago_client, error_result, get_lago_api_config, success_result};
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ListCustomersArgs {
@@ -48,6 +48,27 @@ pub struct CreateCustomerArgs {
     pub net_payment_term: Option<i32>,
     pub customer_type: Option<String>,
     pub finalize_zero_amount_invoice: Option<String>,
+}
+
+/// One customer-metadata key/value pair. Include `id` (the Lago id of an existing item) to
+/// keep or update it; omit `id` to create a new key.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct CustomerMetadataItem {
+    /// Lago id of an EXISTING metadata item. Required to update/keep it — Lago rejects
+    /// re-sending an existing `key` without its id. Omit for a brand-new key.
+    pub id: Option<String>,
+    pub key: String,
+    pub value: String,
+    pub display_in_invoice: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct UpdateCustomerMetadataArgs {
+    pub external_id: String,
+    /// The FULL desired metadata set for the customer. Items with an `id` are kept/updated;
+    /// items without an `id` are created; any existing item you OMIT is DELETED. Call
+    /// get_customer first to read the current items and their ids.
+    pub metadata: Vec<CustomerMetadataItem>,
 }
 
 #[derive(Clone)]
@@ -238,6 +259,68 @@ impl CustomerService {
             }
             Err(e) => {
                 let error_message = format!("Failed to create customer: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
+    pub async fn update_customer_metadata(
+        &self,
+        Parameters(args): Parameters<UpdateCustomerMetadataArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        // lago-types' CreateCustomerMetadata has no `id`, so existing keys can't be updated
+        // through lago-client. Call the REST API directly — it accepts `id` for metadata merges.
+        let config = match get_lago_api_config(&context).await {
+            Ok(config) => config,
+            Err(error_result) => return Ok(error_result),
+        };
+
+        let items: Vec<serde_json::Value> = args
+            .metadata
+            .iter()
+            .map(|m| {
+                let mut obj = serde_json::json!({ "key": m.key, "value": m.value });
+                if let Some(id) = &m.id {
+                    obj["id"] = serde_json::json!(id);
+                }
+                if let Some(display) = m.display_in_invoice {
+                    obj["display_in_invoice"] = serde_json::json!(display);
+                }
+                obj
+            })
+            .collect();
+
+        let body = serde_json::json!({
+            "customer": { "external_id": args.external_id, "metadata": items }
+        });
+        let url = format!("{}/customers", config.base_url.trim_end_matches('/'));
+
+        let response = reqwest::Client::new()
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", config.api_key))
+            .json(&body)
+            .send()
+            .await;
+
+        match response {
+            Ok(resp) => {
+                let status = resp.status();
+                let text = resp.text().await.unwrap_or_default();
+                if status.is_success() {
+                    let json: serde_json::Value =
+                        serde_json::from_str(&text).unwrap_or(serde_json::json!({ "raw": text }));
+                    Ok(success_result(&json))
+                } else {
+                    let error_message =
+                        format!("Failed to update customer metadata: HTTP {status} - {text}");
+                    tracing::error!("{error_message}");
+                    Ok(error_result(error_message))
+                }
+            }
+            Err(e) => {
+                let error_message = format!("Failed to update customer metadata: {e}");
                 tracing::error!("{error_message}");
                 Ok(error_result(error_message))
             }
