@@ -97,7 +97,22 @@ impl LagoMcpServer {
     }
 
     #[tool(
-        description = "Find an invoice by its number (e.g., 'RAF-8142-202601-312'). Use this when you have an invoice number and need to find the invoice details or its lago_id for other operations like voiding."
+        description = "Delete a draft invoice by its Lago ID (UUID). Use this only when an invoice was created by mistake and is still in draft status. \
+            The deletion cannot be undone: the invoice disappears from Lago, its usage is not carried to the next billing period, and any attached draft credit note is also deleted. \
+            Confirm the user's intent before calling this tool. If you only have an invoice number, use find_invoice_by_number first."
+    )]
+    pub async fn delete_invoice(
+        &self,
+        parameters: Parameters<crate::tools::invoice::DeleteInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        self.invoice_service
+            .delete_invoice(parameters, context)
+            .await
+    }
+
+    #[tool(
+        description = "Find an invoice by its number (e.g., 'RAF-8142-202601-312'). Use this when you have an invoice number and need to find the invoice details or its lago_id for other operations like deleting a draft or voiding a finalized invoice."
     )]
     pub async fn find_invoice_by_number(
         &self,
