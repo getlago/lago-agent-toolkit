@@ -7,10 +7,10 @@ use lago_types::{
     models::{InvoicePaymentStatus, InvoiceStatus, InvoiceType, PaginationParams},
     requests::invoice::{
         BillingTime, CreateInvoiceFeeInput, CreateInvoiceInput, CreateInvoiceRequest,
-        DownloadInvoiceRequest, GetInvoiceRequest, InvoicePreviewCoupon, InvoicePreviewCustomer,
-        InvoicePreviewInput, InvoicePreviewRequest, InvoicePreviewSubscriptions,
-        ListCustomerInvoicesRequest, ListInvoicesRequest, RefreshInvoiceRequest,
-        RetryInvoicePaymentRequest, RetryInvoiceRequest, UpdateInvoiceInput,
+        DeleteInvoiceRequest, DownloadInvoiceRequest, GetInvoiceRequest, InvoicePreviewCoupon,
+        InvoicePreviewCustomer, InvoicePreviewInput, InvoicePreviewRequest,
+        InvoicePreviewSubscriptions, ListCustomerInvoicesRequest, ListInvoicesRequest,
+        RefreshInvoiceRequest, RetryInvoicePaymentRequest, RetryInvoiceRequest, UpdateInvoiceInput,
         UpdateInvoiceMetadataInput, UpdateInvoiceRequest, VoidInvoiceRequest,
     },
 };
@@ -46,6 +46,13 @@ pub struct GetInvoiceArgs {
     /// The Lago ID (UUID) of the invoice. Note: This is NOT the invoice number.
     /// To find an invoice by its number (e.g., "RAF-8142-202601-312"), use find_invoice_by_number instead.
     pub invoice_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct DeleteInvoiceArgs {
+    /// The Lago ID (UUID) of the draft invoice to delete. This is not the invoice number.
+    /// Use find_invoice_by_number first if you only have an invoice number.
+    pub lago_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -298,6 +305,33 @@ impl InvoiceService {
         }
     }
 
+    pub async fn delete_invoice(
+        &self,
+        Parameters(args): Parameters<DeleteInvoiceArgs>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, rmcp::ErrorData> {
+        let client = match create_lago_client(&context).await {
+            Ok(client) => client,
+            Err(error_result) => return Ok(error_result),
+        };
+        let request = DeleteInvoiceRequest::new(args.lago_id);
+
+        match client.delete_invoice(request).await {
+            Ok(response) => {
+                let result = serde_json::json!({
+                    "invoice": response.invoice,
+                });
+
+                Ok(success_result(&result))
+            }
+            Err(e) => {
+                let error_message = format!("Failed to delete draft invoice: {e}");
+                tracing::error!("{error_message}");
+                Ok(error_result(error_message))
+            }
+        }
+    }
+
     /// Find an invoice by its number (e.g., "RAF-8142-202601-312").
     /// Returns the invoice details including the lago_id (UUID) needed for other operations.
     pub async fn find_invoice_by_number(
@@ -327,7 +361,7 @@ impl InvoiceService {
                             "found": true,
                             "invoice": invoice,
                             "lago_id": invoice.lago_id,
-                            "hint": "Use the lago_id for operations like void_invoice, download_invoice, etc."
+                            "hint": "Use the lago_id for operations like delete_invoice, void_invoice, download_invoice, etc."
                         });
                         Ok(success_result(&result))
                     }

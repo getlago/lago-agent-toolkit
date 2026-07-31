@@ -76,6 +76,7 @@ For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 ### Invoices
 - **`find_invoice_by_number`**: Find an invoice by its number (e.g., "RAF-8142-202601-312") and get its Lago ID
 - **`get_invoice`**: Retrieve a specific invoice by Lago ID
+- **`delete_invoice`**: Delete a draft invoice by Lago ID after confirming the action; this cannot be undone
 - **`list_invoices`**: Search and filter invoices with advanced criteria
 - **`list_customer_invoices`**: List all invoices for a specific customer
 - **`create_invoice`**: Create a one-off invoice with add-on fees
