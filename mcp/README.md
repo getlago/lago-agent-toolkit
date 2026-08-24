@@ -941,10 +941,11 @@ Add the following to your Claude Desktop MCP configuration:
         "run",
         "--rm",
         "-i",
+        "--pull=always",
         "--name", "lago-mcp-server",
         "-e", "LAGO_API_KEY=your_lago_api_key",
         "-e", "LAGO_API_URL=https://api.getlago.com/api/v1",
-        "getlago/lago-mcp-server"
+        "ghcr.io/getlago/mcp-server:main"
       ]
     }
   }
