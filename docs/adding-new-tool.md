@@ -309,7 +309,7 @@ Goal: get the new MCP server image running in staging, and teach the staging Mis
 
 **Steps**:
 
-1. **MCP staging deploy**. The PR merge auto-triggers `.github/workflows/mcp-docker-build.yml`, which pushes a new `getlago/lago-mcp-server` image (typically tagged `:latest` plus a SHA tag). The deploy to staging is **separate** — usually owned by platform/SRE. Confirm in the relevant Slack channel (often `#platform` or `#infra` for Lago) that the new image is rolled out. Roll back is by redeploying the previous SHA tag, not by deleting the new one (`:latest` is mutable, so always reference SHAs for rollback safety).
+1. **MCP staging deploy**. The PR merge auto-triggers `.github/workflows/mcp-docker-build.yml`, which pushes a new `ghcr.io/getlago/mcp-server` image (tagged `:main`, `:latest`, and `sha-<commit>`). The deploy to staging is **separate** — usually owned by platform/SRE. Confirm in the relevant Slack channel (often `#platform` or `#infra` for Lago) that the new image is rolled out. Roll back is by redeploying the previous SHA tag, not by deleting the new one (`:main` and `:latest` both track the tip of main, so always reference SHAs for rollback safety).
 
 2. Verify the staging MCP server has the new tool. Either:
    - Ask the assistant a question that should trigger the tool — if you get `Tool '<name>' not found`, the deploy hasn't happened yet.

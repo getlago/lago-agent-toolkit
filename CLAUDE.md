@@ -1,6 +1,6 @@
 # Repository context for Claude
 
-This repository (`getlago/lago-agent-toolkit`) is the Rust MCP server (`lago-mcp-server`) that exposes Lago billing operations as tools for AI agents. It's shipped as a Docker image (`getlago/lago-mcp-server`) consumed by both Claude Desktop and the Lago AI Assistant (via Mistral + a Ruby orchestration layer in `getlago/lago-api`).
+This repository (`getlago/lago-agent-toolkit`) is the Rust MCP server (`lago-mcp-server`) that exposes Lago billing operations as tools for AI agents. It's shipped as a Docker image (`ghcr.io/getlago/mcp-server`) consumed by both Claude Desktop and the Lago AI Assistant (via Mistral + a Ruby orchestration layer in `getlago/lago-api`).
 
 ## When the user wants to add a new MCP tool
 

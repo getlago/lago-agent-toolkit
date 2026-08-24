@@ -39,11 +39,12 @@ For operators deploying Managed Agents to their own customers and needing per-se
         "run",
         "--rm",
         "-i",
+        "--pull=always",
         "--name", "lago-mcp-server",
         "-e", "LAGO_API_KEY=your_lago_api_key",
         "-e", "LAGO_API_URL=https://api.getlago.com/api/v1",
         "-e", "LAGO_AGENT_API_URL=https://agent.getlago.com",
-        "getlago/lago-mcp-server:latest"
+        "ghcr.io/getlago/mcp-server:latest"
       ]
     }
   }
