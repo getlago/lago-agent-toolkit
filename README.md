@@ -79,7 +79,7 @@ For self-hosted Lago, replace `LAGO_API_URL` with your instance URL.
 - **`delete_invoice`**: Delete a draft invoice by Lago ID after confirming the action; this cannot be undone
 - **`list_invoices`**: Search and filter invoices with advanced criteria
 - **`list_customer_invoices`**: List all invoices for a specific customer
-- **`create_invoice`**: Create a one-off invoice with add-on fees
+- **`create_invoice`**: Create a one-off invoice with add-on fees, each optionally carrying a service period (`from_datetime` / `to_datetime`)
 - **`update_invoice`**: Update an invoice's payment status or metadata
 - **`preview_invoice`**: Preview an invoice before creating it
 - **`refresh_invoice`**: Refresh a draft invoice to recalculate charges
