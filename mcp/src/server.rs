@@ -151,7 +151,9 @@ impl LagoMcpServer {
     }
 
     #[tool(
-        description = "Create a one-off invoice for a customer with add-on charges. Use this to bill customers for one-time fees like setup charges, consulting hours, or any non-recurring charges."
+        description = "Create a one-off invoice for a customer with add-on charges. Use this to bill customers for one-time fees like setup charges, consulting hours, or any non-recurring charges. \
+            Each fee can carry a service period describing the dates the charge covers, via `from_datetime` and `to_datetime` (ISO 8601 datetimes in UTC). \
+            The service period is optional, but both boundaries must be set together — sending only one is rejected."
     )]
     pub async fn create_invoice(
         &self,

@@ -111,6 +111,29 @@ pub struct CreateInvoiceFeeArgs {
     pub description: Option<String>,
     /// Optional tax codes to apply to this fee.
     pub tax_codes: Option<Vec<String>>,
+    /// Start of the service period this fee covers, as an ISO 8601 datetime in UTC
+    /// (e.g. "2026-08-01T00:00:00Z"). Must be provided together with `to_datetime`.
+    pub from_datetime: Option<String>,
+    /// End of the service period this fee covers, as an ISO 8601 datetime in UTC
+    /// (e.g. "2026-08-31T23:59:59Z"). Must be provided together with `from_datetime`.
+    pub to_datetime: Option<String>,
+}
+
+/// The Lago API rejects a fee that carries only one service period boundary.
+/// Checked before the request is built so the model gets an actionable message
+/// instead of a 422 it can't interpret.
+fn validate_service_periods(fees: &[CreateInvoiceFeeArgs]) -> Result<(), String> {
+    for (index, fee) in fees.iter().enumerate() {
+        if fee.from_datetime.is_some() != fee.to_datetime.is_some() {
+            return Err(format!(
+                "Fee at index {index} (add_on_code '{}') sets only one of from_datetime / \
+                 to_datetime. A service period needs both boundaries, or neither.",
+                fee.add_on_code
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
@@ -530,6 +553,10 @@ impl InvoiceService {
         Parameters(args): Parameters<CreateInvoiceArgs>,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResult, rmcp::ErrorData> {
+        if let Err(message) = validate_service_periods(&args.fees) {
+            return Ok(error_result(message));
+        }
+
         let client = match create_lago_client(&context).await {
             Ok(client) => client,
             Err(error_result) => return Ok(error_result),
@@ -548,6 +575,9 @@ impl InvoiceService {
                 }
                 if let Some(taxes) = f.tax_codes {
                     fee = fee.with_tax_codes(taxes);
+                }
+                if let (Some(from), Some(to)) = (f.from_datetime, f.to_datetime) {
+                    fee = fee.with_service_period(from, to);
                 }
                 fee
             })
@@ -799,5 +829,53 @@ impl InvoiceService {
                 Ok(error_result(error_message))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fee(from: Option<&str>, to: Option<&str>) -> CreateInvoiceFeeArgs {
+        CreateInvoiceFeeArgs {
+            add_on_code: "setup_fee".to_string(),
+            units: 1.0,
+            unit_amount_cents: None,
+            description: None,
+            tax_codes: None,
+            from_datetime: from.map(str::to_string),
+            to_datetime: to.map(str::to_string),
+        }
+    }
+
+    #[test]
+    fn accepts_both_boundaries_or_neither() {
+        assert!(validate_service_periods(&[fee(None, None)]).is_ok());
+        assert!(
+            validate_service_periods(&[fee(
+                Some("2026-08-01T00:00:00Z"),
+                Some("2026-08-31T23:59:59Z")
+            )])
+            .is_ok()
+        );
+    }
+
+    #[test]
+    fn rejects_a_single_boundary() {
+        let err = validate_service_periods(&[fee(Some("2026-08-01T00:00:00Z"), None)]).unwrap_err();
+        assert!(err.contains("index 0"));
+        assert!(err.contains("setup_fee"));
+
+        assert!(validate_service_periods(&[fee(None, Some("2026-08-31T23:59:59Z"))]).is_err());
+    }
+
+    #[test]
+    fn reports_the_offending_fee_index() {
+        let fees = vec![fee(None, None), fee(Some("2026-08-01T00:00:00Z"), None)];
+        assert!(
+            validate_service_periods(&fees)
+                .unwrap_err()
+                .contains("index 1")
+        );
     }
 }
