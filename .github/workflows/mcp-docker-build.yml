@@ -18,3 +18,8 @@ jobs:
       registry: ghcr
       context: mcp
       dockerfile: mcp/Dockerfile
+      # Without this, `latest` only moves on a semver tag push (metadata-action's
+      # latest=auto flavor), so it has pointed at 0.1.0 since Nov 2025 while every
+      # merge here only updated `main` and `sha-<commit>`.
+      tags: |
+        type=raw,value=latest,enable={{is_default_branch}}
