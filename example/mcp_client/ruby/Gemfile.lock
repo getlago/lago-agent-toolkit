@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    json (2.13.2)
+    json (2.19.9)
     net-http (0.6.0)
       uri
     pastel (0.8.0)
