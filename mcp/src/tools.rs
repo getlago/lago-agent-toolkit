@@ -19,7 +19,7 @@ use lago_client::{
 };
 use rmcp::{
     RoleServer,
-    model::{CallToolResult, Content},
+    model::{CallToolResult, ContentBlock},
     service::RequestContext,
 };
 use serde::Serialize;
@@ -98,12 +98,12 @@ pub async fn create_lago_client(
 }
 
 pub fn success_result<T: Serialize>(data: &T) -> CallToolResult {
-    CallToolResult::success(vec![Content::text(
+    CallToolResult::success(vec![ContentBlock::text(
         serde_json::to_string_pretty(data)
             .unwrap_or_else(|_| "Failed to serialize result".to_string()),
     )])
 }
 
 pub fn error_result(message: impl Into<String>) -> CallToolResult {
-    CallToolResult::error(vec![Content::text(message.into())])
+    CallToolResult::error(vec![ContentBlock::text(message.into())])
 }

@@ -22,7 +22,7 @@
 use rmcp::{
     RoleServer,
     handler::server::wrapper::Parameters,
-    model::{CallToolResult, Content},
+    model::{CallToolResult, ContentBlock},
     service::RequestContext,
 };
 use serde::{Deserialize, Serialize};
@@ -222,7 +222,7 @@ impl AnalyticsService {
         match call_agent(&client, &agent_url, &api_key, &request_body).await {
             Err(error_result) => Ok(error_result),
             // happy path returns Markdown, not serialized JSON, so build the result directly
-            Ok(resp) => Ok(CallToolResult::success(vec![Content::text(
+            Ok(resp) => Ok(CallToolResult::success(vec![ContentBlock::text(
                 render_markdown(&resp),
             )])),
         }
