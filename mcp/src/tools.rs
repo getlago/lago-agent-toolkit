@@ -40,6 +40,7 @@ pub async fn get_lago_api_config(
             let key = parts
                 .headers
                 .get("X-LAGO-API-KEY")
+                .or_else(|| parts.headers.get("X-API-KEY"))
                 .and_then(|v| v.to_str().ok())
                 .map(|s| s.to_string());
             let url = env::var("LAGO_API_URL").ok();
@@ -74,6 +75,7 @@ pub async fn create_lago_client(
             let key = parts
                 .headers
                 .get("X-LAGO-API-KEY")
+                .or_else(|| parts.headers.get("X-API-KEY"))
                 .and_then(|v| v.to_str().ok())
                 .map(|s| s.to_string());
             let url = env::var("LAGO_API_URL").ok();
