@@ -5,12 +5,13 @@
 # debian:trixie-slim (runtime). See
 # getlago/lago-packages/apko/mcp-server-{build,base}.yaml.
 #
-# BASE PIN: `:latest@sha256:<index digest>`. Docker builds from the digest,
-# so a build is reproducible. Renovate (getlago/lago-packages
-# renovate/lago-bases) opens a PR when `latest` moves; the base refresh
+# BASE PIN: `:<YYYYMMDD>-r<run>@sha256:<index digest>`, an immutable
+# lago-packages publish. Docker builds from the digest, so a build is
+# reproducible. Renovate (getlago/lago-packages renovate/lago-bases) moves tag
+# and digest together when a newer base is published; the base refresh
 # rebuilds deployed tags with a newer RUNTIME_IMAGE in between.
-ARG BUILD_IMAGE=ghcr.io/getlago/mcp-server-build:latest@sha256:8a732f1bba119f640a13a76b91d8cfa291324dd04f4727b9dbe74164e71907e1
-ARG RUNTIME_IMAGE=ghcr.io/getlago/mcp-server-base:latest@sha256:2f772e077f34e3a04a0fd40999bc650153d01968313b7e86178d012b1ae202d6
+ARG BUILD_IMAGE=ghcr.io/getlago/mcp-server-build:20261023-r68@sha256:8a732f1bba119f640a13a76b91d8cfa291324dd04f4727b9dbe74164e71907e1
+ARG RUNTIME_IMAGE=ghcr.io/getlago/mcp-server-base:20261023-r68@sha256:2f772e077f34e3a04a0fd40999bc650153d01968313b7e86178d012b1ae202d6
 
 # ---------------------------------------------------------------------------
 # Build stage. rust, build-base, pkgconf and the OpenSSL 3.6 headers all come
