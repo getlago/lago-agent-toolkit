@@ -5,11 +5,13 @@
 # debian:trixie-slim (runtime). See
 # getlago/lago-packages/apko/mcp-server-{build,base}.yaml.
 #
-# TAG PIN: both ARGs default to `:latest`, which lago-packages' daily rebuild
-# keeps within ~24h of upstream Wolfi. Override to an immutable
-# `:<lago-packages-commit-sha>` for a reproducible build.
-ARG BUILD_IMAGE=ghcr.io/getlago/mcp-server-build:latest
-ARG RUNTIME_IMAGE=ghcr.io/getlago/mcp-server-base:latest
+# BASE PIN: `:<YYYYMMDD>-r<run>@sha256:<index digest>`, an immutable
+# lago-packages publish. Docker builds from the digest, so a build is
+# reproducible. Renovate (getlago/lago-packages renovate/lago-bases) moves tag
+# and digest together when a newer base is published; the base refresh
+# rebuilds deployed tags with a newer RUNTIME_IMAGE in between.
+ARG BUILD_IMAGE=ghcr.io/getlago/mcp-server-build:20261119-r2089@sha256:d981a3d42dca38606b03b282739de777974ff9925b71d7ea7374542c284cd503
+ARG RUNTIME_IMAGE=ghcr.io/getlago/mcp-server-base:20261119-r2088@sha256:8b28f38729b04154e385804f96c9f539dbeb85f5d02bc41f573bcc4da1876876
 
 # ---------------------------------------------------------------------------
 # Build stage. rust, build-base, pkgconf and the OpenSSL 3.6 headers all come
