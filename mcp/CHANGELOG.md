@@ -4,6 +4,19 @@ All notable changes to `lago-mcp-server` are documented here.
 
 ## [Unreleased]
 
+### Security — HTTP (sse) mode requires a per-request API key
+
+- Requests to `/mcp` without an API key now get `401 Unauthorized`. The
+  `LAGO_API_KEY` environment variable is no longer used as a fallback in HTTP mode
+  (stdio mode is unchanged).
+- The key sent in the request is always used, whether or not `LAGO_API_URL` is set.
+  Previously, without `LAGO_API_URL`, the server's own env key was used instead.
+- The API key can be sent as `X-LAGO-API-KEY`, `X-API-KEY` or
+  `Authorization: Bearer <key>`, checked in that order.
+- New `MCP_ALLOWED_HOSTS` env var (comma separated) enables `Host` and `Origin`
+  validation. When unset, no validation is done, as before.
+- `docker-compose.dev.yml` now publishes the dev server on `127.0.0.1` only.
+
 ### Changed — bump `rmcp` from 0.6.0 to 1.7.0
 
 Upgraded the `rmcp` SDK dependency across a major version boundary (0.6.0 → 1.7.0).

@@ -14,6 +14,7 @@ pub mod payment;
 pub mod plan;
 pub mod subscription;
 
+use axum::http::{HeaderMap, header::AUTHORIZATION, request::Parts};
 use lago_client::{
     Config, Credentials, EnvironmentRegionProvider, LagoClient, Region, RegionProvider,
 };
@@ -30,28 +31,59 @@ pub struct LagoApiConfig {
     pub base_url: String,
 }
 
+/// Reads the caller's Lago API key from the request headers.
+///
+/// Precedence: `X-LAGO-API-KEY`, then `X-API-KEY`, then `Authorization: Bearer <key>`.
+/// Empty values are treated as missing. The returned key must never be logged.
+pub fn api_key_from_headers(headers: &HeaderMap) -> Option<String> {
+    let non_empty = |value: &str| {
+        let value = value.trim();
+        (!value.is_empty()).then(|| value.to_string())
+    };
+
+    ["X-LAGO-API-KEY", "X-API-KEY"]
+        .into_iter()
+        .find_map(|name| {
+            headers
+                .get(name)
+                .and_then(|v| v.to_str().ok())
+                .and_then(non_empty)
+        })
+        .or_else(|| {
+            let value = headers.get(AUTHORIZATION)?.to_str().ok()?.trim();
+            let (scheme, token) = value.split_once(' ')?;
+            scheme
+                .eq_ignore_ascii_case("bearer")
+                .then(|| non_empty(token))
+                .flatten()
+        })
+}
+
+/// Resolves credentials for an HTTP request. The key always comes from the
+/// request headers, never from the `LAGO_API_KEY` environment variable.
+fn http_api_config(parts: &Parts) -> Result<LagoApiConfig, CallToolResult> {
+    let api_key = api_key_from_headers(&parts.headers).ok_or_else(|| {
+        error_result(
+            "Missing Lago API key: send it in the X-LAGO-API-KEY, X-API-KEY or Authorization: Bearer header",
+        )
+    })?;
+    let base_url = match env::var("LAGO_API_URL") {
+        Ok(url) => url,
+        Err(_) => EnvironmentRegionProvider::new()
+            .provider_region()
+            .map_err(|e| error_result(format!("Failed to resolve region: {e}")))?
+            .endpoint()
+            .to_string(),
+    };
+
+    Ok(LagoApiConfig { api_key, base_url })
+}
+
 pub async fn get_lago_api_config(
     context: &RequestContext<RoleServer>,
 ) -> Result<LagoApiConfig, CallToolResult> {
-    let (header_key, header_url) = context
-        .extensions
-        .get::<axum::http::request::Parts>()
-        .map(|parts| {
-            let key = parts
-                .headers
-                .get("X-LAGO-API-KEY")
-                .and_then(|v| v.to_str().ok())
-                .map(|s| s.to_string());
-            let url = env::var("LAGO_API_URL").ok();
-            (key, url)
-        })
-        .unwrap_or((None, None));
-
-    if let (Some(key), Some(url)) = (header_key, header_url) {
-        return Ok(LagoApiConfig {
-            api_key: key,
-            base_url: url,
-        });
+    if let Some(parts) = context.extensions.get::<Parts>() {
+        return http_api_config(parts);
     }
 
     let api_key = env::var("LAGO_API_KEY")
@@ -67,26 +99,11 @@ pub async fn get_lago_api_config(
 pub async fn create_lago_client(
     context: &RequestContext<RoleServer>,
 ) -> Result<LagoClient, CallToolResult> {
-    let (header_key, header_url) = context
-        .extensions
-        .get::<axum::http::request::Parts>()
-        .map(|parts| {
-            let key = parts
-                .headers
-                .get("X-LAGO-API-KEY")
-                .and_then(|v| v.to_str().ok())
-                .map(|s| s.to_string());
-            let url = env::var("LAGO_API_URL").ok();
-            (key, url)
-        })
-        .unwrap_or((None, None));
-
-    if let (Some(key), Some(url)) = (header_key, header_url) {
-        let credentials = Credentials::new(key);
-        let region = Region::Custom(url);
+    if let Some(parts) = context.extensions.get::<Parts>() {
+        let LagoApiConfig { api_key, base_url } = http_api_config(parts)?;
         let config = Config::builder()
-            .credentials(credentials)
-            .region(region)
+            .credentials(Credentials::new(api_key))
+            .region(Region::Custom(base_url))
             .build();
         return Ok(LagoClient::new(config));
     }
