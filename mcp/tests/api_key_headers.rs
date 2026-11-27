@@ -22,6 +22,14 @@ impl Drop for McpProcess {
 }
 
 async fn start_mcp(api_url: &str, fallback_key: Option<&str>) -> (McpProcess, String) {
+    start_mcp_with_hosts(api_url, fallback_key, None).await
+}
+
+async fn start_mcp_with_hosts(
+    api_url: &str,
+    fallback_key: Option<&str>,
+    allowed_hosts: Option<&str>,
+) -> (McpProcess, String) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     drop(listener);
@@ -31,10 +39,14 @@ async fn start_mcp(api_url: &str, fallback_key: Option<&str>) -> (McpProcess, St
         .env("LAGO_API_URL", api_url)
         .env_remove("LAGO_API_KEY")
         .env_remove("LAGO_REGION")
+        .env_remove("MCP_ALLOWED_HOSTS")
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     if let Some(key) = fallback_key {
         command.env("LAGO_API_KEY", key);
+    }
+    if let Some(hosts) = allowed_hosts {
+        command.env("MCP_ALLOWED_HOSTS", hosts);
     }
     let mut process = McpProcess(command.spawn().unwrap());
     let url = format!("http://127.0.0.1:{port}");
@@ -52,7 +64,7 @@ async fn start_mcp(api_url: &str, fallback_key: Option<&str>) -> (McpProcess, St
     panic!("MCP did not become ready");
 }
 
-async fn call_tool(url: &str, tool: &str, headers: &[(&str, &str)]) -> Value {
+async fn post_tool(url: &str, tool: &str, headers: &[(&str, &str)]) -> reqwest::Response {
     let mut request = Client::new()
         .post(url)
         .timeout(Duration::from_secs(10))
@@ -63,10 +75,12 @@ async fn call_tool(url: &str, tool: &str, headers: &[(&str, &str)]) -> Value {
     for (name, value) in headers {
         request = request.header(*name, *value);
     }
-    let body = request
-        .send()
+    request.send().await.unwrap()
+}
+
+async fn call_tool(url: &str, tool: &str, headers: &[(&str, &str)]) -> Value {
+    let body = post_tool(url, tool, headers)
         .await
-        .unwrap()
         .error_for_status()
         .unwrap()
         .text()
@@ -85,7 +99,7 @@ async fn call_tool(url: &str, tool: &str, headers: &[(&str, &str)]) -> Value {
 }
 
 #[tokio::test]
-async fn both_headers_preserve_upstream_authentication_and_environment_fallback() {
+async fn api_key_headers_are_forwarded_upstream_with_precedence() {
     let api = MockServer::start().await;
     let api_url = format!("{}/api/v1", api.uri());
     let (_process, url) = start_mcp(&api_url, None).await;
@@ -121,7 +135,52 @@ async fn both_headers_preserve_upstream_authentication_and_environment_fallback(
                 Some("test-legacy-key"),
                 true,
             ),
-            (&url, &[], None, false),
+            (
+                &url,
+                &[("authorization", "Bearer test-bearer-key")],
+                Some("test-bearer-key"),
+                true,
+            ),
+            (
+                &url,
+                &[("Authorization", "bearer test-bearer-key")],
+                Some("test-bearer-key"),
+                true,
+            ),
+            (
+                &url,
+                &[
+                    ("x-api-key", "test-standard-key"),
+                    ("authorization", "Bearer test-bearer-key"),
+                ],
+                Some("test-standard-key"),
+                true,
+            ),
+            (
+                &url,
+                &[
+                    ("x-lago-api-key", "test-legacy-key"),
+                    ("x-api-key", "test-standard-key"),
+                    ("authorization", "Bearer test-bearer-key"),
+                ],
+                Some("test-legacy-key"),
+                true,
+            ),
+            (
+                &url,
+                &[
+                    ("x-api-key", ""),
+                    ("authorization", "Bearer test-bearer-key"),
+                ],
+                Some("test-bearer-key"),
+                true,
+            ),
+            (
+                &url,
+                &[("authorization", "Bearer invalid-key")],
+                Some("invalid-key"),
+                false,
+            ),
             (
                 &url,
                 &[("x-api-key", "invalid-key")],
@@ -143,7 +202,12 @@ async fn both_headers_preserve_upstream_authentication_and_environment_fallback(
                 Some("invalid-key"),
                 false,
             ),
-            (&fallback_url, &[], Some("test-env-key"), true),
+            (
+                &fallback_url,
+                &[("authorization", "Bearer test-bearer-key")],
+                Some("test-bearer-key"),
+                true,
+            ),
             (
                 &fallback_url,
                 &[("x-api-key", "test-standard-key")],
@@ -190,5 +254,118 @@ async fn both_headers_preserve_upstream_authentication_and_environment_fallback(
             );
             api.verify().await;
         }
+    }
+}
+
+#[tokio::test]
+async fn http_requests_without_an_api_key_are_rejected_with_401() {
+    let api = MockServer::start().await;
+    let api_url = format!("{}/api/v1", api.uri());
+    let (_process, url) = start_mcp(&api_url, None).await;
+    // The env key must never be used in HTTP mode, even when it is set.
+    let (_fallback_process, fallback_url) = start_mcp(&api_url, Some("test-env-key")).await;
+
+    let cases: &[&[(&str, &str)]] = &[
+        &[],
+        &[("x-api-key", "")],
+        &[("x-lago-api-key", "  ")],
+        &[("authorization", "Bearer ")],
+        &[("authorization", "Basic dXNlcjpwYXNz")],
+        &[("authorization", "test-bare-key")],
+    ];
+    for endpoint in [&url, &fallback_url] {
+        for (index, headers) in cases.iter().enumerate() {
+            let response = post_tool(endpoint, "list_customers", headers).await;
+            assert_eq!(response.status(), 401, "case {index} on {endpoint}");
+            assert_eq!(
+                response.headers()["www-authenticate"],
+                "Bearer",
+                "case {index} on {endpoint}"
+            );
+        }
+        let health = Client::new()
+            .get(endpoint.replace("/mcp", "/health"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(health.status(), 200);
+    }
+    assert!(api.received_requests().await.unwrap().is_empty());
+}
+
+async fn mount_customers_ok(api: &MockServer) {
+    Mock::given(method("GET"))
+        .and(path("/api/v1/customers"))
+        .and(header("Authorization", "Bearer test-key"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "customers": [], "meta": {"current_page":1,"total_pages":0,"total_count":0,"next_page":null,"prev_page":null}
+        })))
+        .mount(api)
+        .await;
+}
+
+#[tokio::test]
+async fn host_and_origin_are_validated_when_allowed_hosts_is_set() {
+    let api = MockServer::start().await;
+    mount_customers_ok(&api).await;
+    let api_url = format!("{}/api/v1", api.uri());
+    let (_process, url) =
+        start_mcp_with_hosts(&api_url, None, Some(" mcp.example.com , other.example.com")).await;
+
+    let key = ("x-api-key", "test-key");
+    let allowed: &[&[(&str, &str)]] = &[
+        &[key, ("host", "mcp.example.com")],
+        &[key, ("host", "other.example.com")],
+        &[
+            key,
+            ("host", "mcp.example.com"),
+            ("origin", "https://mcp.example.com"),
+        ],
+    ];
+    for (index, headers) in allowed.iter().enumerate() {
+        let response = post_tool(&url, "list_customers", headers).await;
+        assert_eq!(response.status(), 200, "allowed case {index}");
+    }
+
+    let rejected: &[&[(&str, &str)]] = &[
+        // Default Host sent by the client is 127.0.0.1:<port>, which is not listed.
+        &[key],
+        &[key, ("host", "evil.example.com")],
+        &[
+            key,
+            ("host", "mcp.example.com"),
+            ("origin", "https://evil.example.com"),
+        ],
+        &[
+            key,
+            ("host", "mcp.example.com"),
+            ("origin", "http://mcp.example.com"),
+        ],
+    ];
+    for (index, headers) in rejected.iter().enumerate() {
+        let response = post_tool(&url, "list_customers", headers).await;
+        assert_eq!(response.status(), 403, "rejected case {index}");
+    }
+}
+
+#[tokio::test]
+async fn host_and_origin_are_not_validated_when_allowed_hosts_is_unset() {
+    let api = MockServer::start().await;
+    mount_customers_ok(&api).await;
+    let api_url = format!("{}/api/v1", api.uri());
+    let (_process, url) = start_mcp(&api_url, None).await;
+
+    let key = ("x-lago-api-key", "test-key");
+    let cases: &[&[(&str, &str)]] = &[
+        &[key],
+        &[key, ("host", "evil.example.com")],
+        &[key, ("origin", "https://evil.example.com")],
+    ];
+    for (index, headers) in cases.iter().enumerate() {
+        let result = call_tool(&url, "list_customers", headers).await;
+        assert!(
+            !result["isError"].as_bool().unwrap_or(false),
+            "case {index}: {result}"
+        );
     }
 }

@@ -870,12 +870,28 @@ LAGO_API_URL=https://api.getlago.com/api/v1
 MISTRAL_AGENT_ID=your_mistral_agent_id
 MISTRAL_API_KEY=your_mistral_api_key
 
-# Optional: When API key is not sent through headers
+# Optional, stdio mode only: Lago API key. Ignored in HTTP (sse) mode,
+# where the key must be sent in a request header (see below).
 LAGO_API_KEY=your_lago_api_key
+
+# Optional, HTTP (sse) mode only: comma separated hostnames (or host:port)
+# allowed in the Host header. When set, browser requests must also send an
+# Origin of https://<allowed host>. When unset, Host and Origin are not checked.
+MCP_ALLOWED_HOSTS=mcp.example.com
 
 # Optional: Logging level
 RUST_LOG=info
 ```
+
+### HTTP authentication
+
+In HTTP (sse) mode, every request to `/mcp` must carry the caller's Lago API key in one of these headers, checked in this order:
+
+1. `X-LAGO-API-KEY: <key>`
+2. `X-API-KEY: <key>`
+3. `Authorization: Bearer <key>`
+
+A request without a key gets `401 Unauthorized`. The `LAGO_API_KEY` environment variable is never used as a fallback in this mode. `/health` does not require a key.
 
 ### Installation
 
