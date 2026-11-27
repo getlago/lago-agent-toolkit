@@ -13,7 +13,7 @@ services:
       - LAGO_API_URL=http://api:3000/api/v1
       - RUST_LOG=info
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     volumes:
       - $LAGO_MCP_SERVER_PATH:/app:delegated
     labels:

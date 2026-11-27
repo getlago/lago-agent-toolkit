@@ -30,24 +30,26 @@ async fn start_mcp_with_hosts(
     fallback_key: Option<&str>,
     allowed_hosts: Option<&str>,
 ) -> (McpProcess, String) {
+    let mut env = vec![("LAGO_API_URL", api_url)];
+    env.extend(fallback_key.map(|key| ("LAGO_API_KEY", key)));
+    env.extend(allowed_hosts.map(|hosts| ("MCP_ALLOWED_HOSTS", hosts)));
+    spawn_mcp(&env).await
+}
+
+async fn spawn_mcp(env: &[(&str, &str)]) -> (McpProcess, String) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.local_addr().unwrap().port();
     drop(listener);
     let mut command = Command::new(env!("CARGO_BIN_EXE_lago-mcp-server"));
     command
         .args(["sse", "--host", "127.0.0.1", "--port", &port.to_string()])
-        .env("LAGO_API_URL", api_url)
+        .env_remove("LAGO_API_URL")
         .env_remove("LAGO_API_KEY")
         .env_remove("LAGO_REGION")
         .env_remove("MCP_ALLOWED_HOSTS")
+        .envs(env.iter().copied())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
-    if let Some(key) = fallback_key {
-        command.env("LAGO_API_KEY", key);
-    }
-    if let Some(hosts) = allowed_hosts {
-        command.env("MCP_ALLOWED_HOSTS", hosts);
-    }
     let mut process = McpProcess(command.spawn().unwrap());
     let url = format!("http://127.0.0.1:{port}");
     let client = Client::new();
@@ -283,6 +285,14 @@ async fn http_requests_without_an_api_key_are_rejected_with_401() {
                 "case {index} on {endpoint}"
             );
         }
+        let list = Client::new()
+            .post(endpoint.as_str())
+            .header("Accept", "application/json, text/event-stream")
+            .json(&json!({"jsonrpc":"2.0", "id":1, "method":"tools/list"}))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(list.status(), 401, "tools/list on {endpoint}");
         let health = Client::new()
             .get(endpoint.replace("/mcp", "/health"))
             .send()
@@ -367,5 +377,33 @@ async fn host_and_origin_are_not_validated_when_allowed_hosts_is_unset() {
             !result["isError"].as_bool().unwrap_or(false),
             "case {index}: {result}"
         );
+    }
+}
+
+#[tokio::test]
+async fn header_key_is_used_when_lago_api_url_is_unset() {
+    let api = MockServer::start().await;
+    let api_url = format!("{}/api/v1", api.uri());
+    // Region resolved from LAGO_REGION, with a server-side key that must not be used.
+    let (_process, url) =
+        spawn_mcp(&[("LAGO_REGION", &api_url), ("LAGO_API_KEY", "test-env-key")]).await;
+
+    for (tool, resource) in [("list_customers", "customers"), ("list_events", "events")] {
+        api.reset().await;
+        Mock::given(method("GET"))
+            .and(path(format!("/api/v1/{resource}")))
+            .and(header("Authorization", "Bearer test-standard-key"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                resource: [], "meta": {"current_page":1,"total_pages":0,"total_count":0,"next_page":null,"prev_page":null}
+            })))
+            .expect(1)
+            .mount(&api)
+            .await;
+        let result = call_tool(&url, tool, &[("x-api-key", "test-standard-key")]).await;
+        assert!(
+            !result["isError"].as_bool().unwrap_or(false),
+            "{tool}: {result}"
+        );
+        api.verify().await;
     }
 }
